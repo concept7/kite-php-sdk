@@ -1,0 +1,84 @@
+<?php
+
+namespace Concept7\Kite;
+
+use Concept7\Kite\Actions\GetMysqlVersionAction;
+use Concept7\Kite\Actions\GetPhpVersionAction;
+use Concept7\Kite\Actions\GetTailwindVersionAction;
+use Concept7\Kite\Actions\GetViteVersionAction;
+use Concept7\Kite\Contracts\ActionInterface;
+use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
+use Concept7\Kite\Http\KiteHttpClient;
+use Illuminate\Pipeline\Pipeline;
+
+class KiteReporter
+{
+    private array $actions = [];
+
+    private KiteHttpClient $httpClient;
+
+    public function __construct(
+        private KiteConfig $config,
+        private ?ProjectInfoCollectorInterface $projectInfoCollector = null,
+        ?KiteHttpClient $httpClient = null,
+    ) {
+        $this->actions = $this->defaultActions();
+        $this->httpClient = $httpClient ?? new KiteHttpClient;
+    }
+
+    public function defaultActions(): array
+    {
+        return [
+            new GetPhpVersionAction,
+            new GetMysqlVersionAction,
+            new GetTailwindVersionAction($this->config->projectRoot),
+            new GetViteVersionAction($this->config->projectRoot),
+        ];
+    }
+
+    public function addAction(ActionInterface $action): self
+    {
+        $this->actions[] = $action;
+
+        return $this;
+    }
+
+    public function addActions(array $actions): self
+    {
+        foreach( $actions as $action) {
+            $this->addAction($action);
+        }
+
+        return $this;
+    }
+
+
+    public function setActions(array $actions): self
+    {
+        $this->actions = $actions;
+
+        return $this;
+    }
+
+    public function report(): ReportResult
+    {
+        if (! $this->config->isValid()) {
+            return ReportResult::failure('Project credentials are missing!');
+        }
+
+        $meta = (new Pipeline)
+            ->send(collect([]))
+            ->through($this->actions)
+            ->thenReturn();
+
+        $payload = [
+            'meta' => $meta->filter(fn (array $record) => filled($record['value'] ?? null))->values()->toArray(),
+        ];
+
+        if ($this->projectInfoCollector) {
+            $payload['project_info'] = $this->projectInfoCollector->collect();
+        }
+
+        return $this->httpClient->send($this->config, $payload);
+    }
+}

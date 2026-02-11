@@ -1,0 +1,35 @@
+{
+    "name": "concept7/kite",
+    "description": "Framework-agnostic Kite monitoring client for PHP projects",
+    "keywords": [
+        "Concept7",
+        "kite",
+        "monitoring"
+    ],
+    "homepage": "https://gitlab.concept7.nl/workflow/kite",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Martijn Wagena",
+            "email": "martijn@concept7.nl",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "composer-runtime-api": "^2.0",
+        "guzzlehttp/guzzle": "^7.0",
+        "illuminate/pipeline": "^10.0||^11.0||^12.0",
+        "illuminate/support": "^10.0||^11.0||^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Concept7\\Kite\\": "src/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
