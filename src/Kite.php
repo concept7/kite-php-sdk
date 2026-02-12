@@ -11,19 +11,37 @@ use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
 use Concept7\Kite\Http\KiteHttpClient;
 use Illuminate\Pipeline\Pipeline;
 
-class KiteReporter
+class Kite
 {
     private array $actions = [];
 
     private KiteHttpClient $httpClient;
 
-    public function __construct(
-        private KiteConfig $config,
-        private ?ProjectInfoCollectorInterface $projectInfoCollector = null,
-        ?KiteHttpClient $httpClient = null,
-    ) {
+    private ?ProjectInfoCollectorInterface $projectInfoCollector = null;
+
+    private function __construct(private KiteConfig $config)
+    {
         $this->actions = $this->defaultActions();
-        $this->httpClient = $httpClient ?? new KiteHttpClient;
+        $this->httpClient = new KiteHttpClient;
+    }
+
+    public static function make(KiteConfig $config): self
+    {
+        return new self($config);
+    }
+
+    public function setHttpClient(KiteHttpClient $httpClient): self
+    {
+        $this->httpClient = $httpClient;
+
+        return $this;
+    }
+
+    public function projectInfoCollector(ProjectInfoCollectorInterface $collector): self
+    {
+        $this->projectInfoCollector = $collector;
+
+        return $this;
     }
 
     public function defaultActions(): array
@@ -45,13 +63,12 @@ class KiteReporter
 
     public function addActions(array $actions): self
     {
-        foreach( $actions as $action) {
+        foreach ($actions as $action) {
             $this->addAction($action);
         }
 
         return $this;
     }
-
 
     public function setActions(array $actions): self
     {
