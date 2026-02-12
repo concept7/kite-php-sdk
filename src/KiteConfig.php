@@ -8,8 +8,6 @@ class KiteConfig
         public readonly string $uri,
         public readonly string $projectId,
         public readonly string $projectKey,
-        public readonly string $projectRoot,
-        public readonly string $phpPath = 'php',
     ) {}
 
     public function isValid(): bool

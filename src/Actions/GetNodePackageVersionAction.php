@@ -8,11 +8,15 @@ use Illuminate\Support\Collection;
 
 class GetNodePackageVersionAction implements ActionInterface
 {
+    protected string $projectRoot;
+
     public function __construct(
-        protected string $projectRoot,
         protected string $metaKey,
         protected string $nodePackageName,
-    ) {}
+        ?string $projectRoot = null,
+    ) {
+        $this->projectRoot = $projectRoot ?? \Composer\InstalledVersions::getRootPackage()['install_path'];
+    }
 
     public function handle(Collection $data, Closure $next): Collection
     {

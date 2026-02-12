@@ -17,7 +17,7 @@
     ],
     "require": {
         "php": "^8.2",
-        "composer-runtime-api": "^2.0",
+        "composer/composer": "^2.9",
         "guzzlehttp/guzzle": "^7.0",
         "illuminate/pipeline": "^10.0||^11.0||^12.0",
         "illuminate/support": "^10.0||^11.0||^12.0"
@@ -31,5 +31,8 @@
         "sort-packages": true
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "require-dev": {
+        "laravel/pint": "^1.27"
+    }
 }

@@ -48,7 +48,7 @@ class Kite
         return [
             new GetPhpVersionAction,
             new GetMysqlVersionAction,
-            new GetTailwindVersionAction($this->config->projectRoot),
+            new GetTailwindVersionAction,
         ];
     }
 

@@ -25,7 +25,6 @@ $config = new KiteConfig(
     uri: 'https://kite.example.com',
     projectId: '1',
     projectKey: 'your-project-key',
-    projectRoot: '/var/www/my-project',
 );
 
 $result = Kite::make($config)->report();
@@ -194,8 +193,6 @@ $result = Kite::make($config)
 | `uri` | `string` | yes | Base URL of the Kite API |
 | `projectId` | `string` | yes | Project ID in Kite |
 | `projectKey` | `string` | yes | API key for authentication |
-| `projectRoot` | `string` | yes | Path to the project root (for lock files) |
-| `phpPath` | `string` | no | Path to the PHP binary (default: `php`) |
 
 ## ReportResult
 

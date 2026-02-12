@@ -20,9 +20,7 @@ class KiteHttpClient
 
     public function send(KiteConfig $config, array $payload): ReportResult
     {
-        var_dump('xxx');
         try {
-            var_dump($payload);
             $response = $this->client->post($config->apiUrl(), [
                 'json' => $payload,
                 'headers' => [

@@ -4,8 +4,8 @@ namespace Concept7\Kite\Actions;
 
 class GetTailwindVersionAction extends GetNodePackageVersionAction
 {
-    public function __construct(string $projectRoot)
+    public function __construct()
     {
-        parent::__construct($projectRoot, 'tailwind_version', 'tailwindcss');
+        parent::__construct('tailwind_version', 'tailwindcss');
     }
 }
