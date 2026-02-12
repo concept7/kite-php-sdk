@@ -1,21 +1,21 @@
 # Kite
 
-Framework-agnostic PHP client voor [Kite](https://gitlab.concept7.nl/workflow/kite) monitoring. Verzamelt project-metadata (PHP-versie, database, frontend-tooling, etc.) en rapporteert deze aan de Kite API.
+Framework-agnostic PHP client for [Kite](https://gitlab.concept7.nl/workflow/kite) monitoring. Collects project metadata (PHP version, database, frontend tooling, etc.) and reports it to the Kite API.
 
-## Vereisten
+## Requirements
 
 - PHP 8.2+
 - Composer
 
-## Installatie
+## Installation
 
 ```bash
 composer require concept7/kite
 ```
 
-## Gebruik
+## Usage
 
-### Basis
+### Basic
 
 ```php
 use Concept7\Kite\Kite;
@@ -31,22 +31,21 @@ $config = new KiteConfig(
 $result = Kite::make($config)->report();
 
 if ($result->success) {
-    echo 'Rapport verzonden!';
+    echo 'Report sent!';
 } else {
-    echo 'Fout: ' . $result->message;
+    echo 'Error: ' . $result->message;
 }
 ```
 
-`Kite::make()` registreert automatisch de volgende default actions:
+`Kite::make()` automatically registers the following default actions:
 
-- `GetPhpVersionAction` — PHP-versie
-- `GetMysqlVersionAction` — MySQL/MariaDB-versie
-- `GetTailwindVersionAction` — Tailwind CSS-versie (uit `package-lock.json`)
-- `GetViteVersionAction` — Vite-versie (uit `package-lock.json`)
+- `GetPhpVersionAction` — PHP version
+- `GetMysqlVersionAction` — MySQL/MariaDB version
+- `GetTailwindVersionAction` — Tailwind CSS version (from `package-lock.json`)
 
-### Extra actions toevoegen
+### Adding extra actions
 
-Voeg project-specifieke actions toe naast de defaults:
+Add project-specific actions alongside the defaults:
 
 ```php
 use Concept7\Kite\Actions\GetComposerPackageVersionAction;
@@ -59,7 +58,7 @@ $result = Kite::make($config)
     ->report();
 ```
 
-Of meerdere tegelijk:
+Or multiple at once:
 
 ```php
 $result = Kite::make($config)
@@ -70,9 +69,9 @@ $result = Kite::make($config)
     ->report();
 ```
 
-### Default actions vervangen
+### Replacing default actions
 
-Gebruik `setActions()` om de default actions volledig te overschrijven:
+Use `setActions()` to completely override the default actions:
 
 ```php
 $result = Kite::make($config)
@@ -85,7 +84,7 @@ $result = Kite::make($config)
 
 ### Project info collector
 
-Voeg een `ProjectInfoCollectorInterface`-implementatie toe om extra projectinformatie mee te sturen (zoals hostname, environment, etc.):
+Add a `ProjectInfoCollectorInterface` implementation to send additional project information (such as hostname, environment, etc.):
 
 ```php
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
@@ -106,9 +105,9 @@ $result = Kite::make($config)
     ->report();
 ```
 
-### Volledige fluent chain
+### Full fluent chain
 
-Alle methodes zijn chainable:
+All methods are chainable:
 
 ```php
 $result = Kite::make($config)
@@ -117,9 +116,9 @@ $result = Kite::make($config)
     ->report();
 ```
 
-## Custom action schrijven
+## Writing a custom action
 
-Implementeer `ActionInterface` om een eigen action te maken. Elke action ontvangt een `Collection` met metadata-records en geeft deze door via `$next`:
+Implement `ActionInterface` to create your own action. Each action receives a `Collection` of metadata records and passes it along via `$next`:
 
 ```php
 use Closure;
@@ -144,11 +143,11 @@ class GetRedisVersionAction implements ActionInterface
 }
 ```
 
-Elke record is een array met `key` en `value`. Records met een `null` of lege `value` worden automatisch uitgefilterd voordat het rapport wordt verzonden.
+Each record is an array with `key` and `value`. Records with a `null` or empty `value` are automatically filtered out before the report is sent.
 
-### Custom action toepassen
+### Using a custom action
 
-Eenmaal geschreven voeg je de action toe met `addAction()`:
+Once written, add the action with `addAction()`:
 
 ```php
 $result = Kite::make($config)
@@ -156,7 +155,7 @@ $result = Kite::make($config)
     ->report();
 ```
 
-Of combineer meerdere custom actions met `addActions()`:
+Or combine multiple custom actions with `addActions()`:
 
 ```php
 $result = Kite::make($config)
@@ -167,7 +166,7 @@ $result = Kite::make($config)
     ->report();
 ```
 
-Deze worden toegevoegd naast de default actions. Wil je de defaults volledig vervangen, gebruik dan `setActions()`:
+These are appended alongside the default actions. To fully replace the defaults, use `setActions()`:
 
 ```php
 $result = Kite::make($config)
@@ -178,35 +177,34 @@ $result = Kite::make($config)
     ->report();
 ```
 
-### Ingebouwde actions
+### Built-in actions
 
-| Action | Meta key | Bron |
+| Action | Meta key | Source |
 |---|---|---|
 | `GetPhpVersionAction` | `php_version` | `phpversion()` |
 | `GetMysqlVersionAction` | `database_version` | `mysql --version` |
 | `GetTailwindVersionAction` | `tailwind_version` | `package-lock.json` |
-| `GetViteVersionAction` | `vite_version` | `package-lock.json` |
-| `GetComposerPackageVersionAction` | configureerbaar | `composer.lock` |
-| `GetNodePackageVersionAction` | configureerbaar | `package-lock.json` |
+| `GetComposerPackageVersionAction` | configurable | `composer.lock` |
+| `GetNodePackageVersionAction` | configurable | `package-lock.json` |
 
 ## KiteConfig
 
-| Parameter | Type | Verplicht | Omschrijving |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `uri` | `string` | ja | Base-URL van de Kite API |
-| `projectId` | `string` | ja | Project-ID in Kite |
-| `projectKey` | `string` | ja | API-key voor authenticatie |
-| `projectRoot` | `string` | ja | Pad naar de project-root (voor lock-files) |
-| `phpPath` | `string` | nee | Pad naar PHP binary (default: `php`) |
+| `uri` | `string` | yes | Base URL of the Kite API |
+| `projectId` | `string` | yes | Project ID in Kite |
+| `projectKey` | `string` | yes | API key for authentication |
+| `projectRoot` | `string` | yes | Path to the project root (for lock files) |
+| `phpPath` | `string` | no | Path to the PHP binary (default: `php`) |
 
 ## ReportResult
 
-`report()` retourneert een `ReportResult` met:
+`report()` returns a `ReportResult` with:
 
-- `success` (bool) — of het rapport succesvol is verzonden
-- `message` (string) — foutmelding bij failure
-- `statusCode` (int) — HTTP-statuscode van de API-response
+- `success` (bool) — whether the report was sent successfully
+- `message` (string) — error message on failure
+- `statusCode` (int) — HTTP status code of the API response
 
-## Licentie
+## License
 
 MIT

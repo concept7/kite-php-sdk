@@ -5,7 +5,6 @@ namespace Concept7\Kite;
 use Concept7\Kite\Actions\GetMysqlVersionAction;
 use Concept7\Kite\Actions\GetPhpVersionAction;
 use Concept7\Kite\Actions\GetTailwindVersionAction;
-use Concept7\Kite\Actions\GetViteVersionAction;
 use Concept7\Kite\Contracts\ActionInterface;
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
 use Concept7\Kite\Http\KiteHttpClient;
@@ -50,7 +49,6 @@ class Kite
             new GetPhpVersionAction,
             new GetMysqlVersionAction,
             new GetTailwindVersionAction($this->config->projectRoot),
-            new GetViteVersionAction($this->config->projectRoot),
         ];
     }
 
