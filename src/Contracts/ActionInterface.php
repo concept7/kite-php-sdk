@@ -3,7 +3,7 @@
 namespace Concept7\Kite\Contracts;
 
 use Closure;
-use Illuminate\Support\Collection;
+use Concept7\Kite\Support\Collection;
 
 interface ActionInterface
 {

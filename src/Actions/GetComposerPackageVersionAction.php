@@ -5,7 +5,7 @@ namespace Concept7\Kite\Actions;
 use Closure;
 use Composer\InstalledVersions;
 use Concept7\Kite\Contracts\ActionInterface;
-use Illuminate\Support\Collection;
+use Concept7\Kite\Support\Collection;
 use OutOfBoundsException;
 
 class GetComposerPackageVersionAction implements ActionInterface

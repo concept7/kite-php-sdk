@@ -2,13 +2,15 @@
 
 namespace Concept7\Kite;
 
+use Concept7\Kite\Actions\GetKiteVersionAction;
 use Concept7\Kite\Actions\GetMysqlVersionAction;
 use Concept7\Kite\Actions\GetPhpVersionAction;
 use Concept7\Kite\Actions\GetTailwindVersionAction;
 use Concept7\Kite\Contracts\ActionInterface;
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
 use Concept7\Kite\Http\KiteHttpClient;
-use Illuminate\Pipeline\Pipeline;
+use Concept7\Kite\Support\Collection;
+use Concept7\Kite\Support\Pipeline;
 
 class Kite
 {
@@ -49,6 +51,7 @@ class Kite
             new GetPhpVersionAction,
             new GetMysqlVersionAction,
             new GetTailwindVersionAction,
+            new GetKiteVersionAction,
         ];
     }
 
@@ -82,7 +85,7 @@ class Kite
         }
 
         $meta = (new Pipeline)
-            ->send(collect([]))
+            ->send(new Collection)
             ->through($this->actions)
             ->thenReturn();
 
