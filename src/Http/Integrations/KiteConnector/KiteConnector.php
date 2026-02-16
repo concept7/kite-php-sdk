@@ -11,15 +11,15 @@ class KiteConnector extends Connector
 {
     use AcceptsJson;
 
-    public function __construct(private KiteConfig $config) {}
+    public function __construct(private KiteConfig $kiteConfig) {}
 
     public function resolveBaseUrl(): string
     {
-        return rtrim($this->config->uri, '/');
+        return rtrim($this->kiteConfig->uri, '/');
     }
 
     protected function defaultAuth(): TokenAuthenticator
     {
-        return new TokenAuthenticator($this->config->projectKey);
+        return new TokenAuthenticator($this->kiteConfig->projectKey);
     }
 }

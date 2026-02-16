@@ -8,34 +8,25 @@ use Concept7\Kite\Actions\GetPhpVersionAction;
 use Concept7\Kite\Actions\GetTailwindVersionAction;
 use Concept7\Kite\Contracts\ActionInterface;
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
-use Concept7\Kite\Http\KiteHttpClient;
-use Illuminate\Support\Collection;
+use Concept7\Kite\Http\Integrations\KiteConnector\KiteConnector;
+use Concept7\Kite\Http\Integrations\KiteConnector\Requests\SendReportRequest;
 use Concept7\Kite\Support\Pipeline;
+use Illuminate\Support\Collection;
 
 class Kite
 {
     private array $actions = [];
-
-    private KiteHttpClient $httpClient;
 
     private ?ProjectInfoCollectorInterface $projectInfoCollector = null;
 
     private function __construct(private KiteConfig $config)
     {
         $this->actions = $this->defaultActions();
-        $this->httpClient = new KiteHttpClient;
     }
 
     public static function make(KiteConfig $config): self
     {
         return new self($config);
-    }
-
-    public function setHttpClient(KiteHttpClient $httpClient): self
-    {
-        $this->httpClient = $httpClient;
-
-        return $this;
     }
 
     public function projectInfoCollector(ProjectInfoCollectorInterface $collector): self
@@ -97,6 +88,19 @@ class Kite
             $payload['project_info'] = $this->projectInfoCollector->collect();
         }
 
-        return $this->httpClient->send($this->config, $payload);
+        try {
+            $connector = new KiteConnector($this->config);
+
+            $request = new SendReportRequest($this->config->projectId, $payload);
+            $response = $connector->send($request);
+
+            if ($response->ok()) {
+                return ReportResult::success($response->status());
+            }
+
+            return ReportResult::failure($response->body(), $response->status());
+        } catch (\Throwable $e) {
+            return ReportResult::failure($e->getMessage());
+        }
     }
 }
