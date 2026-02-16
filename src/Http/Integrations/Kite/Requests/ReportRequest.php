@@ -1,13 +1,15 @@
 <?php
 
-namespace Concept7\Kite\Http\Integrations\KiteConnector\Requests;
+namespace Concept7\Kite\Http\Integrations\Kite\Requests;
 
+use Concept7\Kite\Http\Integrations\Kite\Dtos\ProjectReportDto;
 use Saloon\Contracts\Body\HasBody;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;
+use Saloon\Http\Response;
 use Saloon\Traits\Body\HasJsonBody;
 
-class SendReportRequest extends Request implements HasBody
+class ReportRequest extends Request implements HasBody
 {
     use HasJsonBody;
 
@@ -26,5 +28,14 @@ class SendReportRequest extends Request implements HasBody
     protected function defaultBody(): array
     {
         return $this->payload;
+    }
+
+    public function createDtoFromResponse(Response $response): mixed
+    {
+        $data = $response->json();
+
+        return new ProjectReportDto(
+            message: $data['message'],
+        );
     }
 }

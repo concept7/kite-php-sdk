@@ -8,9 +8,10 @@ use Concept7\Kite\Actions\GetPhpVersionAction;
 use Concept7\Kite\Actions\GetTailwindVersionAction;
 use Concept7\Kite\Contracts\ActionInterface;
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
-use Concept7\Kite\Http\Integrations\KiteConnector\KiteConnector;
-use Concept7\Kite\Http\Integrations\KiteConnector\Requests\SendReportRequest;
-use Concept7\Kite\Support\Pipeline;
+use Concept7\Kite\Http\Integrations\Kite\Dtos\ProjectReportDto;
+use Concept7\Kite\Http\Integrations\Kite\KiteConnector;
+use Concept7\Kite\Http\Integrations\Kite\Requests\ReportRequest;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Collection;
 
 class Kite
@@ -69,10 +70,10 @@ class Kite
         return $this;
     }
 
-    public function report(): ReportResult
+    public function report(): ProjectReportDto
     {
         if (! $this->config->isValid()) {
-            return ReportResult::failure('Project credentials are missing!');
+            throw new \Exception('Project credentials are missing!');
         }
 
         $meta = (new Pipeline)
@@ -88,19 +89,11 @@ class Kite
             $payload['project_info'] = $this->projectInfoCollector->collect();
         }
 
-        try {
-            $connector = new KiteConnector($this->config);
+        $connector = new KiteConnector($this->config);
 
-            $request = new SendReportRequest($this->config->projectId, $payload);
-            $response = $connector->send($request);
+        $request = new ReportRequest($this->config->projectId, $payload);
+        $response = $connector->send($request);
 
-            if ($response->ok()) {
-                return ReportResult::success($response->status());
-            }
-
-            return ReportResult::failure($response->body(), $response->status());
-        } catch (\Throwable $e) {
-            return ReportResult::failure($e->getMessage());
-        }
+        return $response->dtoOrFail();
     }
 }
