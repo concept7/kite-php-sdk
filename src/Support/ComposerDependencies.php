@@ -2,17 +2,20 @@
 
 namespace Concept7\Kite\Support;
 
+use Illuminate\Process\Factory as ProcessFactory;
+
 class ComposerDependencies
 {
     public static function direct(string $phpPath = 'php'): array
     {
-        $output = @shell_exec($phpPath.' vendor/bin/composer show -D --format=json --no-dev');
+        $process = new ProcessFactory;
+        $result = $process->run($phpPath.' vendor/bin/composer show -D --format=json --no-dev');
 
-        if (blank($output)) {
+        if ($result->failed() || blank($result->output())) {
             return [];
         }
 
-        $data = json_decode($output);
+        $data = json_decode($result->output());
 
         if (blank($data)) {
             return [];

@@ -4,7 +4,7 @@ namespace Concept7\Kite\Actions;
 
 use Closure;
 use Concept7\Kite\Contracts\ActionInterface;
-use Concept7\Kite\Support\Collection;
+use Illuminate\Support\Collection;
 
 class GetPhpVersionAction implements ActionInterface
 {
