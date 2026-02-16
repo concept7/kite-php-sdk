@@ -1,5 +1,5 @@
 {
-    "name": "concept7/kite",
+    "name": "concept7/kite-php-sdk",
     "description": "Framework-agnostic Kite monitoring client for PHP projects",
     "keywords": [
         "Concept7",
@@ -18,7 +18,7 @@
     "require": {
         "php": "^8.2",
         "composer/composer": "^2.9",
-        "guzzlehttp/guzzle": "^7.0",
+        "saloonphp/saloon": "^3.0",
         "illuminate/process": "^10.0||^11.0||^12.0",
         "illuminate/support": "^10.0||^11.0||^12.0"
     },
