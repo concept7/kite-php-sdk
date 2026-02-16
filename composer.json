@@ -1,12 +1,12 @@
 {
     "name": "concept7/kite-php-sdk",
-    "description": "Framework-agnostic Kite monitoring client for PHP projects",
+    "description": "Framework-agnostic Kite PHP SDK for project monitoring",
     "keywords": [
         "Concept7",
         "kite",
         "monitoring"
     ],
-    "homepage": "https://gitlab.concept7.nl/workflow/kite",
+    "homepage": "https://gitlab.concept7.nl/workflow/kite-php-sdk",
     "license": "MIT",
     "authors": [
         {
