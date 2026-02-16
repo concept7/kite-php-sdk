@@ -122,15 +122,17 @@ Implement `ActionInterface` to create your own action. Each action receives a `C
 ```php
 use Closure;
 use Concept7\Kite\Contracts\ActionInterface;
+use Illuminate\Process\Factory as ProcessFactory;
 use Illuminate\Support\Collection;
 
 class GetRedisVersionAction implements ActionInterface
 {
     public function handle(Collection $data, Closure $next): Collection
     {
-        $output = @shell_exec('redis-server --version');
+        $process = new ProcessFactory;
+        $result = $process->run('redis-server --version');
 
-        if ($output && preg_match('/v=(\d+\.\d+\.\d+)/', $output, $matches)) {
+        if ($result->successful() && preg_match('/v=(\d+\.\d+\.\d+)/', $result->output(), $matches)) {
             $data->push([
                 'key' => 'redis_version',
                 'value' => $matches[1],

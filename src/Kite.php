@@ -9,7 +9,7 @@ use Concept7\Kite\Actions\GetTailwindVersionAction;
 use Concept7\Kite\Contracts\ActionInterface;
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
 use Concept7\Kite\Http\KiteHttpClient;
-use Concept7\Kite\Support\Collection;
+use Illuminate\Support\Collection;
 use Concept7\Kite\Support\Pipeline;
 
 class Kite
