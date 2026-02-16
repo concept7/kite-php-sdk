@@ -8,34 +8,26 @@ use Concept7\Kite\Actions\GetPhpVersionAction;
 use Concept7\Kite\Actions\GetTailwindVersionAction;
 use Concept7\Kite\Contracts\ActionInterface;
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
-use Concept7\Kite\Http\KiteHttpClient;
+use Concept7\Kite\Http\Integrations\Kite\Dtos\ProjectReportDto;
+use Concept7\Kite\Http\Integrations\Kite\KiteConnector;
+use Concept7\Kite\Http\Integrations\Kite\Requests\ReportRequest;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Collection;
-use Concept7\Kite\Support\Pipeline;
 
 class Kite
 {
     private array $actions = [];
-
-    private KiteHttpClient $httpClient;
 
     private ?ProjectInfoCollectorInterface $projectInfoCollector = null;
 
     private function __construct(private KiteConfig $config)
     {
         $this->actions = $this->defaultActions();
-        $this->httpClient = new KiteHttpClient;
     }
 
     public static function make(KiteConfig $config): self
     {
         return new self($config);
-    }
-
-    public function setHttpClient(KiteHttpClient $httpClient): self
-    {
-        $this->httpClient = $httpClient;
-
-        return $this;
     }
 
     public function projectInfoCollector(ProjectInfoCollectorInterface $collector): self
@@ -78,10 +70,10 @@ class Kite
         return $this;
     }
 
-    public function report(): ReportResult
+    public function report(): ProjectReportDto
     {
         if (! $this->config->isValid()) {
-            return ReportResult::failure('Project credentials are missing!');
+            throw new \Exception('Project credentials are missing!');
         }
 
         $meta = (new Pipeline)
@@ -97,6 +89,11 @@ class Kite
             $payload['project_info'] = $this->projectInfoCollector->collect();
         }
 
-        return $this->httpClient->send($this->config, $payload);
+        $connector = new KiteConnector($this->config);
+
+        $request = new ReportRequest($this->config->projectId, $payload);
+        $response = $connector->send($request);
+
+        return $response->dtoOrFail();
     }
 }
