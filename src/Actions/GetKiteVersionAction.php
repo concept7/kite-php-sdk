@@ -6,6 +6,6 @@ class GetKiteVersionAction extends GetComposerPackageVersionAction
 {
     public function __construct()
     {
-        parent::__construct('kite_version', ['concept7/kite']);
+        parent::__construct('kite_version', ['concept7/kite-php-sdk']);
     }
 }
