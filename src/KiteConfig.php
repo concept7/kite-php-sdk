@@ -5,20 +5,16 @@ namespace Concept7\Kite;
 class KiteConfig
 {
     public function __construct(
-        public readonly string $uri,
-        public readonly string $projectId,
-        public readonly string $projectKey,
+        public readonly ?string $uri = null,
+        public readonly ?string $projectId = null,
+        public readonly ?string $projectKey = null,
     ) {}
 
     public function isValid(): bool
     {
-        return $this->uri !== ''
-            && $this->projectId !== ''
-            && $this->projectKey !== '';
+        return filled($this->uri)
+            && filled($this->projectId)
+            && filled($this->projectKey);
     }
 
-    public function apiUrl(): string
-    {
-        return rtrim($this->uri, '/').'/api/project/'.$this->projectId;
-    }
 }
