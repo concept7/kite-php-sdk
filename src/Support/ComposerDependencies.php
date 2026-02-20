@@ -6,10 +6,11 @@ use Illuminate\Process\Factory as ProcessFactory;
 
 class ComposerDependencies
 {
-    public static function direct(string $phpPath = 'php'): array
+    public static function direct(string $phpPath = 'php', ?string $basePath = null): array
     {
         $process = new ProcessFactory;
-        $result = $process->run($phpPath.' vendor/bin/composer show -D --format=json --no-dev');
+        $pending = $basePath !== null ? $process->path($basePath) : $process;
+        $result = $pending->run($phpPath.' vendor/bin/composer show -D --format=json --no-dev');
 
         if ($result->failed() || blank($result->output())) {
             return [];
