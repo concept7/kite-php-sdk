@@ -2,31 +2,44 @@
 
 namespace Concept7\Kite\Support;
 
-use Illuminate\Process\Factory as ProcessFactory;
+use Composer\InstalledVersions;
 
 class ComposerDependencies
 {
-    public static function direct(string $phpPath = 'php', ?string $basePath = null): array
+    public static function direct(?string $basePath = null): array
     {
-        $process = new ProcessFactory;
-        $pending = $basePath !== null ? $process->path($basePath) : $process;
-        $result = $pending->run($phpPath.' vendor/bin/composer show -D --format=json --no-dev');
+        $basePath ??= getcwd();
+        $composerJsonPath = $basePath.'/composer.json';
 
-        var_dump($basePath);
-        var_dump($phpPath.' vendor/bin/composer show -D --format=json --no-dev');
-
-        if ($result->failed() || blank($result->output())) {
+        if (! file_exists($composerJsonPath)) {
             return [];
         }
 
-        $data = json_decode($result->output());
+        $composerJson = json_decode(file_get_contents($composerJsonPath), true);
 
-        var_dump($data);
-
-        if (blank($data)) {
+        if (blank($composerJson)) {
             return [];
         }
 
-        return $data->installed;
+        $requires = array_keys($composerJson['require'] ?? []);
+
+        $packages = [];
+
+        foreach ($requires as $name) {
+            if ($name === 'php' || str_starts_with($name, 'ext-') || str_starts_with($name, 'lib-')) {
+                continue;
+            }
+
+            if (! InstalledVersions::isInstalled($name)) {
+                continue;
+            }
+
+            $packages[] = [
+                'name' => $name,
+                'version' => InstalledVersions::getPrettyVersion($name),
+            ];
+        }
+
+        return $packages;
     }
 }
