@@ -12,6 +12,8 @@ class ComposerDependencies
         $pending = $basePath !== null ? $process->path($basePath) : $process;
         $result = $pending->run($phpPath.' vendor/bin/composer show -D --format=json --no-dev');
 
+        exit($basePath);
+
         var_dump($basePath);
         var_dump($phpPath.' vendor/bin/composer show -D --format=json --no-dev');
 
