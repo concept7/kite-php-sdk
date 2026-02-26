@@ -3,6 +3,7 @@
 namespace Concept7\Kite\Support;
 
 use Composer\InstalledVersions;
+use Concept7\Kite\Enums\Ecosystem;
 
 class ComposerDependencies
 {
@@ -37,6 +38,7 @@ class ComposerDependencies
             $packages[] = [
                 'name' => $name,
                 'version' => InstalledVersions::getPrettyVersion($name),
+                'ecosystem' => Ecosystem::Composer->value,
             ];
         }
 
@@ -47,7 +49,7 @@ class ComposerDependencies
     {
         return collect(InstalledVersions::getAllRawData()[0]['versions'])
             ->filter(fn (array $properties) => isset($properties['pretty_version']))
-            ->map(fn (array $properties, string $name) => ['name' => $name, 'version' => $properties['pretty_version']])
+            ->map(fn (array $properties, string $name) => ['name' => $name, 'version' => $properties['pretty_version'], 'ecosystem' => 'composer'])
             ->values()
             ->all();
     }
