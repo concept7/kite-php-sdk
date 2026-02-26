@@ -42,4 +42,13 @@ class ComposerDependencies
 
         return $packages;
     }
+
+    public static function all(): array
+    {
+        return collect(InstalledVersions::getAllRawData()[0]['versions'])
+            ->filter(fn (array $properties) => isset($properties['pretty_version']))
+            ->map(fn (array $properties, string $name) => ['name' => $name, 'version' => $properties['pretty_version']])
+            ->values()
+            ->all();
+    }
 }
