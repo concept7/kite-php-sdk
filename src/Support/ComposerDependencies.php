@@ -35,11 +35,7 @@ class ComposerDependencies
                 continue;
             }
 
-            $packages[] = [
-                'name' => $name,
-                'version' => InstalledVersions::getPrettyVersion($name),
-                'ecosystem' => Ecosystem::Composer->value,
-            ];
+            $packages[] = static::parsePackageData($name);
         }
 
         return $packages;
@@ -49,8 +45,17 @@ class ComposerDependencies
     {
         return collect(InstalledVersions::getAllRawData()[0]['versions'])
             ->filter(fn (array $properties) => isset($properties['pretty_version']))
-            ->map(fn (array $properties, string $name) => ['name' => $name, 'version' => $properties['pretty_version'], 'ecosystem' => 'composer'])
+            ->map(fn (array $properties, string $name) => static::parsePackageData($name))
             ->values()
             ->all();
+    }
+
+    private static function parsePackageData(string $name): array
+    {
+        return [
+            'name' => $name,
+            'version' => InstalledVersions::getPrettyVersion($name),
+            'ecosystem' => Ecosystem::Composer,
+        ];
     }
 }
