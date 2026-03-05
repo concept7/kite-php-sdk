@@ -16,13 +16,12 @@ class ReportRequest extends Request implements HasBody
     protected Method $method = Method::POST;
 
     public function __construct(
-        private string $projectId,
         private array $payload,
     ) {}
 
     public function resolveEndpoint(): string
     {
-        return '/api/project/'.$this->projectId;
+        return '/api/project';
     }
 
     protected function defaultBody(): array
