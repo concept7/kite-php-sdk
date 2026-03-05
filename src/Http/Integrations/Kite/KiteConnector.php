@@ -17,11 +17,11 @@ class KiteConnector extends Connector
 
     public function resolveBaseUrl(): string
     {
-        return rtrim($this->kiteConfig->uri, '/');
+        return rtrim($this->kiteConfig->uri ?? KiteConfig::BASE_URL, '/');
     }
 
     protected function defaultAuth(): TokenAuthenticator
     {
-        return new TokenAuthenticator($this->kiteConfig->projectKey);
+        return new TokenAuthenticator($this->kiteConfig->token);
     }
 }

@@ -4,17 +4,16 @@ namespace Concept7\Kite;
 
 class KiteConfig
 {
+    public const BASE_URL = 'https://kite-monitor.concept7.dev';
+
     public function __construct(
+        public readonly ?string $token = null,
         public readonly ?string $uri = null,
-        public readonly ?string $projectId = null,
-        public readonly ?string $projectKey = null,
     ) {}
 
     public function isValid(): bool
     {
-        return filled($this->uri)
-            && filled($this->projectId)
-            && filled($this->projectKey);
+        return filled($this->token);
     }
 
 }

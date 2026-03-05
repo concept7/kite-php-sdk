@@ -91,7 +91,7 @@ class Kite
 
         $connector = new KiteConnector($this->config);
 
-        $request = new ReportRequest($this->config->projectId, $payload);
+        $request = new ReportRequest($payload);
         $response = $connector->send($request);
 
         return $response->dtoOrFail();
