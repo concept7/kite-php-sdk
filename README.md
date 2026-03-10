@@ -1,6 +1,6 @@
-# Kite
+# Kite PHP SDK
 
-Framework-agnostic PHP client for [Kite](https://gitlab.concept7.nl/workflow/kite) monitoring. Collects project metadata (PHP version, database, frontend tooling, etc.) and reports it to the Kite API.
+Framework-agnostic PHP client for [Kite](https://gitlab.concept7.nl/workflow/kite) monitoring. Collects project metadata (PHP version, database, frontend tooling, installed packages) and reports it to the Kite API.
 
 ## Requirements
 
@@ -10,7 +10,29 @@ Framework-agnostic PHP client for [Kite](https://gitlab.concept7.nl/workflow/kit
 ## Installation
 
 ```bash
-composer require concept7/kite
+composer require concept7/kite-php-sdk
+```
+
+## Configuration
+
+Set the `KITE_TOKEN` environment variable with the token generated from the [Kite Dashboard](https://kite-monitor.concept7.dev/).
+
+```php
+use Concept7\Kite\Kite;
+use Concept7\Kite\KiteConfig;
+
+$config = new KiteConfig(
+    token: getenv('KITE_TOKEN'),
+);
+```
+
+The API base URL defaults to `https://kite-monitor.concept7.dev`. Override it for development:
+
+```php
+$config = new KiteConfig(
+    token: getenv('KITE_TOKEN'),
+    uri: 'https://kite.test',
+);
 ```
 
 ## Usage
@@ -18,22 +40,7 @@ composer require concept7/kite
 ### Basic
 
 ```php
-use Concept7\Kite\Kite;
-use Concept7\Kite\KiteConfig;
-
-$config = new KiteConfig(
-    uri: 'https://kite.example.com',
-    projectId: '1',
-    projectKey: 'your-project-key',
-);
-
 $result = Kite::make($config)->report();
-
-if ($result->success) {
-    echo 'Report sent!';
-} else {
-    echo 'Error: ' . $result->message;
-}
 ```
 
 `Kite::make()` automatically registers the following default actions:
@@ -41,6 +48,7 @@ if ($result->success) {
 - `GetPhpVersionAction` — PHP version
 - `GetMysqlVersionAction` — MySQL/MariaDB version
 - `GetTailwindVersionAction` — Tailwind CSS version (from `package-lock.json`)
+- `GetKiteVersionAction` — Kite SDK version
 
 ### Adding extra actions
 
@@ -83,7 +91,7 @@ $result = Kite::make($config)
 
 ### Project info collector
 
-Add a `ProjectInfoCollectorInterface` implementation to send additional project information (such as hostname, environment, etc.):
+Add a `ProjectInfoCollectorInterface` implementation to send additional project information:
 
 ```php
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
@@ -104,9 +112,27 @@ $result = Kite::make($config)
     ->report();
 ```
 
-### Full fluent chain
+### Package collection
 
-All methods are chainable:
+The SDK provides helpers to collect installed packages with ecosystem tagging:
+
+```php
+use Concept7\Kite\Support\ComposerDependencies;
+use Concept7\Kite\Support\NpmDependencies;
+
+// Direct Composer dependencies (from composer.json require)
+ComposerDependencies::direct();
+
+// All Composer dependencies (including transitive)
+ComposerDependencies::all();
+
+// Installed npm packages (from package-lock.json)
+NpmDependencies::installed();
+```
+
+Each returns an array of `['name' => '...', 'version' => '...', 'ecosystem' => Ecosystem::Composer|Npm]`.
+
+### Full fluent chain
 
 ```php
 $result = Kite::make($config)
@@ -146,63 +172,26 @@ class GetRedisVersionAction implements ActionInterface
 
 Each record is an array with `key` and `value`. Records with a `null` or empty `value` are automatically filtered out before the report is sent.
 
-### Using a custom action
-
-Once written, add the action with `addAction()`:
-
-```php
-$result = Kite::make($config)
-    ->addAction(new GetRedisVersionAction)
-    ->report();
-```
-
-Or combine multiple custom actions with `addActions()`:
-
-```php
-$result = Kite::make($config)
-    ->addActions([
-        new GetRedisVersionAction,
-        new GetPostgresVersionAction,
-    ])
-    ->report();
-```
-
-These are appended alongside the default actions. To fully replace the defaults, use `setActions()`:
-
-```php
-$result = Kite::make($config)
-    ->setActions([
-        new GetPhpVersionAction,
-        new GetRedisVersionAction,
-    ])
-    ->report();
-```
-
-### Built-in actions
+## Built-in actions
 
 | Action | Meta key | Source |
 |---|---|---|
 | `GetPhpVersionAction` | `php_version` | `phpversion()` |
 | `GetMysqlVersionAction` | `database_version` | `mysql --version` |
 | `GetTailwindVersionAction` | `tailwind_version` | `package-lock.json` |
+| `GetKiteVersionAction` | `kite_version` | `composer.lock` |
 | `GetComposerPackageVersionAction` | configurable | `composer.lock` |
 | `GetNodePackageVersionAction` | configurable | `package-lock.json` |
 
-## KiteConfig
+## Ecosystems
 
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `uri` | `string` | yes | Base URL of the Kite API |
-| `projectId` | `string` | yes | Project ID in Kite |
-| `projectKey` | `string` | yes | API key for authentication |
+The `Ecosystem` enum tags packages by source:
 
-## ReportResult
-
-`report()` returns a `ReportResult` with:
-
-- `success` (bool) — whether the report was sent successfully
-- `message` (string) — error message on failure
-- `statusCode` (int) — HTTP status code of the API response
+| Case | Value |
+|---|---|
+| `Ecosystem::Composer` | `composer` |
+| `Ecosystem::Npm` | `npm` |
+| `Ecosystem::Wordpress` | `wordpress` |
 
 ## License
 
