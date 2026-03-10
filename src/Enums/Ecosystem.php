@@ -6,4 +6,5 @@ enum Ecosystem: string
 {
     case Composer = 'composer';
     case Npm = 'npm';
+    case Wordpress = 'wordpress';
 }
