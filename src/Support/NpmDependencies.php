@@ -17,7 +17,10 @@ class NpmDependencies
         }
 
         $lockfile = static::readJsonFile($basePath.'/package-lock.json');
-        $dependencies = array_keys($packageJson['dependencies'] ?? []);
+        $dependencies = array_keys(array_merge(
+            $packageJson['dependencies'] ?? [],
+            $packageJson['devDependencies'] ?? [],
+        ));
         $packages = [];
 
         foreach ($dependencies as $name) {
