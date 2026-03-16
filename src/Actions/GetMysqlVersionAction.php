@@ -4,21 +4,21 @@ namespace Concept7\Kite\Actions;
 
 use Closure;
 use Concept7\Kite\Contracts\ActionInterface;
-use Illuminate\Process\Factory as ProcessFactory;
 use Illuminate\Support\Collection;
+use Symfony\Component\Process\Process;
 
 class GetMysqlVersionAction implements ActionInterface
 {
     public function handle(Collection $data, Closure $next): Collection
     {
-        $process = new ProcessFactory;
-        $result = $process->run('mysql --version');
+        $process = new Process(['mysql', '--version']);
+        $process->run();
 
-        if ($result->failed() || blank($result->output())) {
+        if (! $process->isSuccessful() || blank($process->getOutput())) {
             return $next($data);
         }
 
-        $output = $result->output();
+        $output = $process->getOutput();
 
         $database = 'mysql_';
         if (str_contains(strtolower($output), 'mariadb')) {
