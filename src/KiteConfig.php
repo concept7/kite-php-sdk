@@ -15,5 +15,4 @@ class KiteConfig
     {
         return filled($this->token);
     }
-
 }
