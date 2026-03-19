@@ -2,7 +2,9 @@
 
 namespace Concept7\Kite\Http\Integrations\Kite;
 
+use Concept7\Kite\Http\Senders\KiteGuzzleSender;
 use Concept7\Kite\KiteConfig;
+use Saloon\Contracts\Sender;
 use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Traits\Plugins\AcceptsJson;
@@ -14,6 +16,11 @@ class KiteConnector extends Connector
     use AlwaysThrowOnErrors;
 
     public function __construct(private KiteConfig $kiteConfig) {}
+
+    protected function defaultSender(): Sender
+    {
+        return new KiteGuzzleSender();
+    }
 
     public function resolveBaseUrl(): string
     {
