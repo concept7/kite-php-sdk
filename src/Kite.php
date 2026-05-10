@@ -11,6 +11,7 @@ use Concept7\Kite\Contracts\ActionInterface;
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
 use Concept7\Kite\Http\Integrations\Kite\Dtos\ProjectReportDto;
 use Concept7\Kite\Http\Integrations\Kite\KiteConnector;
+use Concept7\Kite\Http\Integrations\Kite\Requests\AdvisoriesRequest;
 use Concept7\Kite\Http\Integrations\Kite\Requests\ReportRequest;
 use Concept7\Kite\Support\ComposerAdvisories;
 use Concept7\Kite\Support\NpmAdvisories;
@@ -130,5 +131,34 @@ class Kite
         $response = $connector->send($request);
 
         return $response->dtoOrFail();
+    }
+
+    public function checkAdvisories(): void
+    {
+        if (! $this->config->isValid()) {
+            throw new \Exception('Project credentials are missing!');
+        }
+
+        if (! $this->projectInfoCollector) {
+            return;
+        }
+
+        $packages = $this->projectInfoCollector->collect()['packages'] ?? [];
+
+        if (blank($packages)) {
+            return;
+        }
+
+        try {
+            $advisories = array_merge(
+                ComposerAdvisories::scan($packages),
+                NpmAdvisories::scan($packages),
+            );
+        } catch (\Throwable) {
+            return;
+        }
+
+        $connector = new KiteConnector($this->config);
+        $connector->send(new AdvisoriesRequest($advisories));
     }
 }
