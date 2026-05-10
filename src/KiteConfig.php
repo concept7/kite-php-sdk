@@ -9,6 +9,8 @@ class KiteConfig
     public function __construct(
         public readonly ?string $token = null,
         public readonly ?string $uri = null,
+        public readonly ?array $packages = null,
+        public readonly array $monitoredPackages = [],
     ) {}
 
     public function isValid(): bool
