@@ -20,7 +20,7 @@ class ComposerAdvisories
             fn (array $package): bool => static::isComposer($package['ecosystem'] ?? null),
         ));
 
-        if (empty($composerPackages)) {
+        if (blank($composerPackages)) {
             return [];
         }
 
@@ -37,8 +37,8 @@ class ComposerAdvisories
         $advisories = [];
 
         foreach ($composerPackages as $package) {
-            foreach ($advisoriesByPackage[$package['name']] ?? [] as $advisory) {
-                $affectedVersions = $advisory['affectedVersions'] ?? null;
+            foreach (data_get($advisoriesByPackage, $package['name'], []) as $advisory) {
+                $affectedVersions = data_get($advisory, 'affectedVersions');
 
                 if ($affectedVersions && ! Semver::satisfies($package['version'], $affectedVersions)) {
                     continue;
@@ -49,13 +49,14 @@ class ComposerAdvisories
                     'package' => $package['name'],
                     'version' => $package['version'],
                     'ecosystem' => Ecosystem::Composer->value,
-                    'title' => $advisory['title'] ?? '',
-                    'link' => $advisory['link'] ?? null,
-                    'cve' => $advisory['cve'] ?? null,
-                    'severity' => $advisory['severity'] ?? null,
-                    'reported_at' => filled($advisory['reportedAt'] ?? null)
-                        ? date('Y-m-d', strtotime($advisory['reportedAt']))
-                        : null,
+                    'title' => data_get($advisory, 'title', ''),
+                    'link' => data_get($advisory, 'link'),
+                    'cve' => data_get($advisory, 'cve'),
+                    'severity' => data_get($advisory, 'severity'),
+                    'reported_at' => transform(
+                        data_get($advisory, 'reportedAt'),
+                        fn (string $reportedAt) => date('Y-m-d', strtotime($reportedAt)),
+                    ),
                 ];
             }
         }

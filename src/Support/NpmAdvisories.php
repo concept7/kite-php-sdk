@@ -20,7 +20,7 @@ class NpmAdvisories
             fn (array $package): bool => static::isNpm($package['ecosystem'] ?? null),
         ));
 
-        if (empty($npmPackages)) {
+        if (blank($npmPackages)) {
             return [];
         }
 
@@ -35,12 +35,12 @@ class NpmAdvisories
 
         $vulnIdToIndexes = [];
         foreach ($results as $index => $result) {
-            foreach ($result['vulns'] ?? [] as $vuln) {
+            foreach (data_get($result, 'vulns', []) as $vuln) {
                 $vulnIdToIndexes[$vuln['id']][] = $index;
             }
         }
 
-        if (empty($vulnIdToIndexes)) {
+        if (blank($vulnIdToIndexes)) {
             return [];
         }
 
@@ -73,33 +73,34 @@ class NpmAdvisories
     private static function normalizeVuln(array $vuln): array
     {
         $link = null;
-        foreach ($vuln['references'] ?? [] as $reference) {
+        foreach (data_get($vuln, 'references', []) as $reference) {
             if ($reference['type'] === 'ADVISORY') {
                 $link = $reference['url'];
                 break;
             }
         }
-        $link ??= $vuln['references'][0]['url'] ?? null;
+        $link ??= data_get($vuln, 'references.0.url');
 
         $cve = null;
-        foreach ($vuln['aliases'] ?? [] as $alias) {
+        foreach (data_get($vuln, 'aliases', []) as $alias) {
             if (str_starts_with($alias, 'CVE-')) {
                 $cve = $alias;
                 break;
             }
         }
 
-        $severity = strtolower($vuln['database_specific']['severity'] ?? '') ?: null;
+        $severity = strtolower(data_get($vuln, 'database_specific.severity', '')) ?: null;
 
         return [
             'advisory_id' => $vuln['id'],
-            'title' => $vuln['summary'] ?? '',
+            'title' => data_get($vuln, 'summary', ''),
             'link' => $link,
             'cve' => $cve,
             'severity' => $severity,
-            'reported_at' => filled($vuln['published'] ?? null)
-                ? date('Y-m-d', strtotime($vuln['published']))
-                : null,
+            'reported_at' => transform(
+                data_get($vuln, 'published'),
+                fn (string $published) => date('Y-m-d', strtotime($published)),
+            ),
         ];
     }
 

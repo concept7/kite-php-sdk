@@ -85,8 +85,13 @@ class Kite
             ->through($this->actions)
             ->thenReturn();
 
+        $metaPayload = $meta
+            ->filter(fn (array $record): bool => filled(data_get($record, 'value')))
+            ->values()
+            ->toArray();
+
         $payload = [
-            'meta' => $meta->filter(fn (array $record) => filled($record['value'] ?? null))->values()->toArray(),
+            'meta' => $metaPayload,
         ];
 
         if ($this->projectInfoCollector) {
