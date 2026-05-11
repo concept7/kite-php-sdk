@@ -1,7 +1,6 @@
 {
     "name": "concept7/kite-php-sdk",
-    "version": "0.0.15",
-    "description": "Framework-agnostic Kite PHP SDK for project monitoring",
+"description": "Framework-agnostic Kite PHP SDK for project monitoring",
     "keywords": [
         "Concept7",
         "kite",
