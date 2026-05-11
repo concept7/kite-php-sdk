@@ -98,31 +98,11 @@ class Kite
         if ($this->projectInfoCollector) {
             $projectInfo = $this->projectInfoCollector->collect();
 
-            if ($this->config->packages !== null) {
-                $projectInfo['packages'] = array_values(array_filter(
-                    $projectInfo['packages'],
-                    fn (array $package): bool => in_array($package['name'], $this->config->packages),
-                ));
-            }
-
             if (filled($this->config->monitoredPackages)) {
                 $projectInfo['monitored_packages'] = $this->config->monitoredPackages;
             }
 
             $payload['project_info'] = $projectInfo;
-        }
-
-        $packages = $payload['project_info']['packages'] ?? [];
-
-        if (filled($packages)) {
-            try {
-                $payload['advisories'] = array_merge(
-                    ComposerAdvisories::scan($packages),
-                    NpmAdvisories::scan($packages),
-                );
-            } catch (\Throwable) {
-                // Advisory scanning failed; backend will scan instead
-            }
         }
 
         $connector = new KiteConnector($this->config);
