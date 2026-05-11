@@ -99,7 +99,7 @@ class NpmAdvisories
             'severity' => $severity,
             'reported_at' => transform(
                 data_get($vuln, 'published'),
-                fn (string $published) => date('Y-m-d', strtotime($published)),
+                fn (string $published): string => date('Y-m-d', strtotime($published)),
             ),
         ];
     }

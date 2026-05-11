@@ -55,7 +55,7 @@ class ComposerAdvisories
                     'severity' => data_get($advisory, 'severity'),
                     'reported_at' => transform(
                         data_get($advisory, 'reportedAt'),
-                        fn (string $reportedAt) => date('Y-m-d', strtotime($reportedAt)),
+                        fn (string $reportedAt): string => date('Y-m-d', strtotime($reportedAt)),
                     ),
                 ];
             }

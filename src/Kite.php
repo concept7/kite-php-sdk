@@ -123,7 +123,7 @@ class Kite
             return;
         }
 
-        $packages = $this->projectInfoCollector->collect()['packages'] ?? [];
+        $packages = data_get($this->projectInfoCollector->collect(), 'packages', []);
 
         if (blank($packages)) {
             return;
