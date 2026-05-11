@@ -52,7 +52,13 @@ class ComposerAdvisories
                     'title' => data_get($advisory, 'title', ''),
                     'link' => data_get($advisory, 'link'),
                     'cve' => data_get($advisory, 'cve'),
-                    'severity' => data_get($advisory, 'severity'),
+                    'severity' => match (data_get($advisory, 'severity')) {
+                        'critical' => 'critical',
+                        'high' => 'high',
+                        'moderate', 'medium' => 'medium',
+                        'low' => 'low',
+                        default => null,
+                    },
                     'reported_at' => transform(
                         data_get($advisory, 'reportedAt'),
                         fn (string $reportedAt): string => date('Y-m-d', strtotime($reportedAt)),

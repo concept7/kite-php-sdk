@@ -89,7 +89,13 @@ class NpmAdvisories
             }
         }
 
-        $severity = strtolower(data_get($vuln, 'database_specific.severity', '')) ?: null;
+        $severity = match (strtolower(data_get($vuln, 'database_specific.severity', ''))) {
+            'critical' => 'critical',
+            'high' => 'high',
+            'moderate', 'medium' => 'medium',
+            'low' => 'low',
+            default => null,
+        };
 
         return [
             'advisory_id' => $vuln['id'],
