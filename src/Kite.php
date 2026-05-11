@@ -103,6 +103,19 @@ class Kite
             }
 
             $payload['project_info'] = $projectInfo;
+
+            $packages = data_get($projectInfo, 'packages', []);
+
+            if (filled($packages)) {
+                try {
+                    $payload['advisories'] = array_merge(
+                        ComposerAdvisories::scan($packages),
+                        NpmAdvisories::scan($packages),
+                    );
+                } catch (\Throwable) {
+                    // advisory scan failure must not block the report
+                }
+            }
         }
 
         $connector = new KiteConnector($this->config);
