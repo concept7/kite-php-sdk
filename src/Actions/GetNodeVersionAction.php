@@ -28,20 +28,23 @@ class GetNodeVersionAction implements ActionInterface
 
     private function resolveVersion(): ?string
     {
+        $output = shell_exec('node --version 2>/dev/null');
+
+        if (filled($output)) {
+            $version = ltrim(trim($output), 'v');
+
+            if (preg_match('/^\d+\.\d+/', $version)) {
+                return $version;
+            }
+        }
+
         $nvmrcPath = rtrim($this->projectRoot, '/').'/.nvmrc';
 
         if (file_exists($nvmrcPath)) {
-            return ltrim(trim((string) file_get_contents($nvmrcPath)), 'v');
-        }
+            $version = ltrim(trim((string) file_get_contents($nvmrcPath)), 'v');
 
-        $packageJsonPath = rtrim($this->projectRoot, '/').'/package.json';
-
-        if (file_exists($packageJsonPath)) {
-            $packageJson = json_decode((string) file_get_contents($packageJsonPath), true);
-            $nodeVersion = data_get($packageJson, 'engines.node');
-
-            if (filled($nodeVersion)) {
-                return ltrim(trim($nodeVersion), 'v');
+            if (preg_match('/^\d+\.\d+/', $version)) {
+                return $version;
             }
         }
 
