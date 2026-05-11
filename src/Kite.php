@@ -99,25 +99,6 @@ class Kite
             $projectInfo = $this->projectInfoCollector->collect();
             $packages = data_get($projectInfo, 'packages', []);
 
-            if (filled($this->config->monitoredPackages)) {
-                $packagesByName = array_column($packages, null, 'name');
-
-                $monitored = array_values(array_filter(array_map(
-                    fn (string $name): ?array => isset($packagesByName[$name])
-                        ? [
-                            'name' => $name,
-                            'version' => $packagesByName[$name]['version'],
-                            'ecosystem' => $packagesByName[$name]['ecosystem'] ?? 'composer',
-                        ]
-                        : null,
-                    $this->config->monitoredPackages,
-                )));
-
-                if (filled($monitored)) {
-                    $projectInfo['monitored_packages'] = $monitored;
-                }
-            }
-
             $payload['project_info'] = $projectInfo;
 
             if (filled($packages)) {
