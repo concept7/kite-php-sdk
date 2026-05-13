@@ -9,9 +9,11 @@ use Concept7\Kite\Actions\GetPhpVersionAction;
 use Concept7\Kite\Actions\GetTailwindVersionAction;
 use Concept7\Kite\Contracts\ActionInterface;
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
+use Concept7\Kite\Http\Integrations\Kite\Dtos\ConfigDto;
 use Concept7\Kite\Http\Integrations\Kite\Dtos\ProjectReportDto;
 use Concept7\Kite\Http\Integrations\Kite\KiteConnector;
 use Concept7\Kite\Http\Integrations\Kite\Requests\AdvisoriesRequest;
+use Concept7\Kite\Http\Integrations\Kite\Requests\ConfigRequest;
 use Concept7\Kite\Http\Integrations\Kite\Requests\ReportRequest;
 use Concept7\Kite\Support\ComposerAdvisories;
 use Concept7\Kite\Support\NpmAdvisories;
@@ -95,10 +97,15 @@ class Kite
             'meta' => $metaPayload,
         ];
 
+        $connector = new KiteConnector($this->config);
+        $serverConfig = $this->fetchConfig($connector);
+
         if ($this->projectInfoCollector) {
             $projectInfo = $this->projectInfoCollector->collect();
             $packages = data_get($projectInfo, 'packages', []);
+            $packages = $this->filterPackages($packages, $serverConfig);
 
+            $projectInfo['packages'] = $packages;
             $payload['project_info'] = $projectInfo;
 
             if (filled($packages)) {
@@ -112,8 +119,6 @@ class Kite
                 }
             }
         }
-
-        $connector = new KiteConnector($this->config);
 
         $request = new ReportRequest($payload);
         $response = $connector->send($request);
@@ -131,7 +136,11 @@ class Kite
             return;
         }
 
+        $connector = new KiteConnector($this->config);
+        $serverConfig = $this->fetchConfig($connector);
+
         $packages = data_get($this->projectInfoCollector->collect(), 'packages', []);
+        $packages = $this->filterPackages($packages, $serverConfig);
 
         if (blank($packages)) {
             return;
@@ -146,7 +155,26 @@ class Kite
             return;
         }
 
-        $connector = new KiteConnector($this->config);
         $connector->send(new AdvisoriesRequest($advisories));
+    }
+
+    private function fetchConfig(KiteConnector $connector): ConfigDto
+    {
+        try {
+            return $connector->send(new ConfigRequest)->dtoOrFail();
+        } catch (\Throwable) {
+            return new ConfigDto(monitoredPackages: [], isSharingAllPackages: false);
+        }
+    }
+
+    private function filterPackages(array $packages, ConfigDto $config): array
+    {
+        if ($config->isSharingAllPackages) {
+            return $packages;
+        }
+
+        return array_values(
+            array_filter($packages, fn (array $package): bool => in_array($package['name'], $config->monitoredPackages)),
+        );
     }
 }
