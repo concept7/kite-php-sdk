@@ -28,14 +28,10 @@ class GetNodeVersionAction implements ActionInterface
 
     private function resolveVersion(): ?string
     {
-        $output = shell_exec('node --version 2>/dev/null');
+        $binaryVersion = $this->resolveVersionFromBinary();
 
-        if (filled($output)) {
-            $version = ltrim(trim($output), 'v');
-
-            if (preg_match('/^\d+\.\d+/', $version)) {
-                return $version;
-            }
+        if (filled($binaryVersion)) {
+            return $binaryVersion;
         }
 
         $nvmrcPath = rtrim($this->projectRoot, '/').'/.nvmrc';
@@ -49,5 +45,18 @@ class GetNodeVersionAction implements ActionInterface
         }
 
         return null;
+    }
+
+    protected function resolveVersionFromBinary(): ?string
+    {
+        $output = shell_exec('node --version 2>/dev/null');
+
+        if (blank($output)) {
+            return null;
+        }
+
+        $version = ltrim(trim($output), 'v');
+
+        return preg_match('/^\d+\.\d+/', $version) ? $version : null;
     }
 }
