@@ -15,6 +15,7 @@ use Concept7\Kite\Http\Integrations\Kite\Requests\ConfigRequest;
 use Concept7\Kite\Http\Integrations\Kite\Requests\ReportRequest;
 use Concept7\Kite\Support\ComposerAdvisories;
 use Concept7\Kite\Support\NpmAdvisories;
+use Exception;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Collection;
 
@@ -76,7 +77,7 @@ class Kite
     public function report(): ProjectReportDto
     {
         if (! $this->config->isValid()) {
-            throw new \Exception('Project credentials are missing!');
+            throw new Exception('Project credentials are missing!');
         }
 
         $meta = (new Pipeline)
@@ -125,7 +126,7 @@ class Kite
     public function checkAdvisories(): void
     {
         if (! $this->config->isValid()) {
-            throw new \Exception('Project credentials are missing!');
+            throw new Exception('Project credentials are missing!');
         }
 
         if (! $this->projectInfoCollector) {
