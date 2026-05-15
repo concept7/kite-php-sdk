@@ -18,6 +18,7 @@ use Concept7\Kite\Support\NpmAdvisories;
 use Exception;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Collection;
+use Throwable;
 
 class Kite
 {
@@ -111,7 +112,7 @@ class Kite
                         ComposerAdvisories::scan($packages),
                         NpmAdvisories::scan($packages),
                     );
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     // advisory scan failure must not block the report
                 }
             }
@@ -148,7 +149,7 @@ class Kite
                 ComposerAdvisories::scan($packages),
                 NpmAdvisories::scan($packages),
             );
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return;
         }
 
@@ -159,7 +160,7 @@ class Kite
     {
         try {
             return $connector->send(new ConfigRequest)->dtoOrFail();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return new ConfigDto(monitoredPackages: [], isSharingAllPackages: false);
         }
     }
