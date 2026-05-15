@@ -28,9 +28,25 @@ pest:
     matrix:
       - PHP_VERSION: "8.2"
       - PHP_VERSION: "8.3"
-      - PHP_VERSION: "8.4"
   script:
     - vendor/bin/pest
+
+pest:coverage:
+  stage: test
+  image: "registry.concept7.nl/workflow/php-8.4:latest"
+  extends: .composer-install
+  script:
+    - vendor/bin/pest --colors=never --log-junit=phpunit-report.xml --coverage --coverage-cobertura=coverage.cobertura.xml
+  artifacts:
+    paths:
+      - phpunit-report.xml
+      - coverage.cobertura.xml
+    reports:
+      junit: phpunit-report.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.cobertura.xml
+  coverage: '/Total:\s+\d+\.\d+ %/'
 
 workflow:
   rules:
