@@ -18,7 +18,7 @@ class NpmAdvisories
     {
         $npmPackages = array_values(array_filter(
             $packages,
-            fn (array $package): bool => static::isNpm($package['ecosystem'] ?? null),
+            fn (array $package): bool => static::isNpm(data_get($package, 'ecosystem')),
         ));
 
         if (blank($npmPackages)) {

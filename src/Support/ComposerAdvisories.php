@@ -18,7 +18,7 @@ class ComposerAdvisories
     {
         $composerPackages = array_values(array_filter(
             $packages,
-            fn (array $package): bool => static::isComposer($package['ecosystem'] ?? null),
+            fn (array $package): bool => static::isComposer(data_get($package, 'ecosystem')),
         ));
 
         if (blank($composerPackages)) {
