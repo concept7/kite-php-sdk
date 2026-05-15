@@ -2,11 +2,9 @@
 
 namespace Concept7\Kite;
 
-use Concept7\Kite\Actions\GetKiteVersionAction;
 use Concept7\Kite\Actions\GetMysqlVersionAction;
 use Concept7\Kite\Actions\GetNodeVersionAction;
 use Concept7\Kite\Actions\GetPhpVersionAction;
-use Concept7\Kite\Actions\GetTailwindVersionAction;
 use Concept7\Kite\Contracts\ActionInterface;
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
 use Concept7\Kite\Http\Integrations\Kite\Dtos\ConfigDto;
@@ -49,8 +47,6 @@ class Kite
             new GetPhpVersionAction,
             new GetNodeVersionAction,
             new GetMysqlVersionAction,
-            new GetTailwindVersionAction,
-            new GetKiteVersionAction,
         ];
     }
 
