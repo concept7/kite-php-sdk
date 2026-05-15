@@ -65,7 +65,7 @@ class ComposerAdvisories
         return $advisories;
     }
 
-    private static function isComposer(mixed $ecosystem): bool
+    private static function isComposer(Ecosystem|string|null $ecosystem): bool
     {
         if ($ecosystem instanceof Ecosystem) {
             return $ecosystem === Ecosystem::Composer;

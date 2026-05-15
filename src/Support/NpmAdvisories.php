@@ -105,7 +105,7 @@ class NpmAdvisories
         ];
     }
 
-    private static function isNpm(mixed $ecosystem): bool
+    private static function isNpm(Ecosystem|string|null $ecosystem): bool
     {
         if ($ecosystem instanceof Ecosystem) {
             return $ecosystem === Ecosystem::Npm;
