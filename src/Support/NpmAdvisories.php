@@ -3,6 +3,7 @@
 namespace Concept7\Kite\Support;
 
 use Concept7\Kite\Enums\Ecosystem;
+use Concept7\Kite\Enums\Severity;
 use Concept7\Kite\Http\Integrations\Osv\OsvConnector;
 use Concept7\Kite\Http\Integrations\Osv\Requests\GetVulnerabilityRequest;
 use Concept7\Kite\Http\Integrations\Osv\Requests\QueryBatchRequest;
@@ -89,13 +90,7 @@ class NpmAdvisories
             }
         }
 
-        $severity = match (strtolower(data_get($vuln, 'database_specific.severity', ''))) {
-            'critical' => 'critical',
-            'high' => 'high',
-            'moderate', 'medium' => 'medium',
-            'low' => 'low',
-            default => null,
-        };
+        $severity = Severity::parse(data_get($vuln, 'database_specific.severity'))?->value;
 
         return [
             'advisory_id' => $vuln['id'],

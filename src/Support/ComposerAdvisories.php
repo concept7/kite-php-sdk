@@ -4,6 +4,7 @@ namespace Concept7\Kite\Support;
 
 use Composer\Semver\Semver;
 use Concept7\Kite\Enums\Ecosystem;
+use Concept7\Kite\Enums\Severity;
 use Concept7\Kite\Http\Integrations\Packagist\PackagistConnector;
 use Concept7\Kite\Http\Integrations\Packagist\Requests\GetSecurityAdvisoriesRequest;
 
@@ -52,13 +53,7 @@ class ComposerAdvisories
                     'title' => data_get($advisory, 'title', ''),
                     'link' => data_get($advisory, 'link'),
                     'cve' => data_get($advisory, 'cve'),
-                    'severity' => match (data_get($advisory, 'severity')) {
-                        'critical' => 'critical',
-                        'high' => 'high',
-                        'moderate', 'medium' => 'medium',
-                        'low' => 'low',
-                        default => null,
-                    },
+                    'severity' => Severity::parse(data_get($advisory, 'severity'))?->value,
                     'reported_at' => transform(
                         data_get($advisory, 'reportedAt'),
                         fn (string $reportedAt): string => date('Y-m-d', strtotime($reportedAt)),
