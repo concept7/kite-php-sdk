@@ -15,7 +15,7 @@ enum Severity: string
             return $value;
         }
 
-        if ($value === null || $value === '') {
+        if (blank($value)) {
             return null;
         }
 
