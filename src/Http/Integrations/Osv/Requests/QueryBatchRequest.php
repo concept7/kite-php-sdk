@@ -25,7 +25,7 @@ class QueryBatchRequest extends Request implements HasBody
     protected function defaultBody(): array
     {
         return [
-            'queries' => array_map(fn (array $package) => [
+            'queries' => array_map(fn (array $package): array => [
                 'version' => $package['version'],
                 'package' => [
                     'name' => $package['name'],

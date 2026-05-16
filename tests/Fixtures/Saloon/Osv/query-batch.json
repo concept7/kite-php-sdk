@@ -1,0 +1,8 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "Content-Type": "application/json"
+    },
+    "data": "{\"results\":[{\"vulns\":[{\"id\":\"GHSA-1234-abcd-5678\"}]},{\"vulns\":[]}]}",
+    "context": {}
+}
