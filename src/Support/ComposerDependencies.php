@@ -48,7 +48,7 @@ class ComposerDependencies
         $requiredByMap = static::buildRequiredByMap($basePath);
 
         return collect(InstalledVersions::getAllRawData()[0]['versions'])
-            ->filter(fn (array $properties) => isset($properties['pretty_version']))
+            ->filter(fn (array $properties): bool => isset($properties['pretty_version']))
             ->map(fn (array $properties, string $name) => static::parsePackageData(
                 $name,
                 in_array($name, $directNames),

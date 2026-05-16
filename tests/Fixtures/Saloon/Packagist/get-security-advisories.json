@@ -1,0 +1,8 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "Content-Type": "application/json"
+    },
+    "data": "{\"advisories\":{\"laravel/framework\":[{\"advisoryId\":\"PKSA-2024-0001\",\"packageName\":\"laravel/framework\",\"title\":\"Remote code execution vulnerability\",\"link\":\"https://packagist.org/advisories/PKSA-2024-0001\",\"cve\":\"CVE-2024-54321\",\"affectedVersions\":\">=10.0.0,<10.48.0\",\"severity\":\"high\",\"reportedAt\":\"2024-03-01 00:00:00\"}]}}",
+    "context": {}
+}
