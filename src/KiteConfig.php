@@ -4,7 +4,7 @@ namespace Concept7\Kite;
 
 class KiteConfig
 {
-    public const BASE_URL = 'https://kite-monitor.concept7.dev';
+    public const BASE_URL = 'https://kite-monitor.com';
 
     public function __construct(
         public readonly ?string $token = null,
