@@ -134,11 +134,7 @@ class Kite
             return;
         }
 
-        $connector = new KiteConnector($this->config);
-        $serverConfig = $this->fetchConfig($connector);
-
         $packages = data_get($this->projectInfoCollector->collect(), 'packages', []);
-        $packages = $this->filterPackages($packages, $serverConfig);
 
         if (blank($packages)) {
             return;
@@ -153,6 +149,7 @@ class Kite
             return;
         }
 
+        $connector = new KiteConnector($this->config);
         $connector->send(new AdvisoriesRequest($advisories));
     }
 
