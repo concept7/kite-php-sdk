@@ -2,17 +2,23 @@
 
 namespace Concept7\Kite;
 
-use Concept7\Kite\Actions\GetKiteVersionAction;
 use Concept7\Kite\Actions\GetMysqlVersionAction;
+use Concept7\Kite\Actions\GetNodeVersionAction;
 use Concept7\Kite\Actions\GetPhpVersionAction;
-use Concept7\Kite\Actions\GetTailwindVersionAction;
 use Concept7\Kite\Contracts\ActionInterface;
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
+use Concept7\Kite\Http\Integrations\Kite\Dtos\ConfigDto;
 use Concept7\Kite\Http\Integrations\Kite\Dtos\ProjectReportDto;
 use Concept7\Kite\Http\Integrations\Kite\KiteConnector;
+use Concept7\Kite\Http\Integrations\Kite\Requests\AdvisoriesRequest;
+use Concept7\Kite\Http\Integrations\Kite\Requests\ConfigRequest;
 use Concept7\Kite\Http\Integrations\Kite\Requests\ReportRequest;
+use Concept7\Kite\Support\ComposerAdvisories;
+use Concept7\Kite\Support\NpmAdvisories;
+use Exception;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Collection;
+use Throwable;
 
 class Kite
 {
@@ -41,9 +47,8 @@ class Kite
     {
         return [
             new GetPhpVersionAction,
+            new GetNodeVersionAction,
             new GetMysqlVersionAction,
-            new GetTailwindVersionAction,
-            new GetKiteVersionAction,
         ];
     }
 
@@ -73,7 +78,7 @@ class Kite
     public function report(): ProjectReportDto
     {
         if (! $this->config->isValid()) {
-            throw new \Exception('Project credentials are missing!');
+            throw new Exception('Project credentials are missing!');
         }
 
         $meta = (new Pipeline)
@@ -81,19 +86,92 @@ class Kite
             ->through($this->actions)
             ->thenReturn();
 
+        $metaPayload = $meta
+            ->filter(fn (array $record): bool => filled(data_get($record, 'value')))
+            ->values()
+            ->toArray();
+
         $payload = [
-            'meta' => $meta->filter(fn (array $record) => filled($record['value'] ?? null))->values()->toArray(),
+            'meta' => $metaPayload,
         ];
 
-        if ($this->projectInfoCollector) {
-            $payload['project_info'] = $this->projectInfoCollector->collect();
-        }
-
         $connector = new KiteConnector($this->config);
+        $serverConfig = $this->fetchConfig($connector);
+
+        if ($this->projectInfoCollector) {
+            $projectInfo = $this->projectInfoCollector->collect();
+            $allPackages = data_get($projectInfo, 'packages', []);
+            $filteredPackages = $this->filterPackages($allPackages, $serverConfig);
+
+            $projectInfo['packages'] = $filteredPackages;
+            $payload['project_info'] = $projectInfo;
+
+            if (filled($allPackages)) {
+                try {
+                    $payload['advisories'] = $this->scanAdvisories($allPackages);
+                } catch (Throwable) {
+                    // advisory scan failure must not block the report
+                }
+            }
+        }
 
         $request = new ReportRequest($payload);
         $response = $connector->send($request);
 
         return $response->dtoOrFail();
+    }
+
+    public function checkAdvisories(): void
+    {
+        if (! $this->config->isValid()) {
+            throw new Exception('Project credentials are missing!');
+        }
+
+        if (! $this->projectInfoCollector) {
+            return;
+        }
+
+        $packages = data_get($this->projectInfoCollector->collect(), 'packages', []);
+
+        if (blank($packages)) {
+            return;
+        }
+
+        try {
+            $advisories = $this->scanAdvisories($packages);
+        } catch (Throwable) {
+            return;
+        }
+
+        $connector = new KiteConnector($this->config);
+        $connector->send(new AdvisoriesRequest($advisories));
+    }
+
+    private function scanAdvisories(array $packages): array
+    {
+        return array_merge(
+            ComposerAdvisories::scan($packages),
+            NpmAdvisories::scan($packages),
+        );
+    }
+
+    private function fetchConfig(KiteConnector $connector): ConfigDto
+    {
+        try {
+            return $connector->send(new ConfigRequest)->dtoOrFail();
+        } catch (Throwable) {
+            return new ConfigDto(monitoredPackages: [], isSharingAllPackages: false);
+        }
+    }
+
+    private function filterPackages(array $packages, ConfigDto $config): array
+    {
+        if ($config->isSharingAllPackages) {
+            return $packages;
+        }
+
+        return array_values(
+            array_filter($packages, fn (array $package): bool => in_array($package['name'], $config->monitoredPackages)),
+        );
     }
 }

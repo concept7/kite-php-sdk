@@ -1,6 +1,6 @@
 {
     "name": "concept7/kite-php-sdk",
-    "description": "Framework-agnostic Kite PHP SDK for project monitoring",
+"description": "Framework-agnostic Kite PHP SDK for project monitoring",
     "keywords": [
         "Concept7",
         "kite",
@@ -20,7 +20,7 @@
         "composer/composer": "^2.9",
         "illuminate/pipeline": "^8.0||^9.0||^10.0||^11.0||^12.0||^13.0",
         "illuminate/support": "^8.0||^9.0||^10.0||^11.0||^12.0||^13.0",
-        "saloonphp/saloon": "^3.0",
+        "saloonphp/saloon": "^4.0",
         "symfony/process": "^5.4||^6.4||^7.0||^8.0"
     },
     "autoload": {
@@ -29,11 +29,15 @@
         }
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require-dev": {
-        "laravel/pint": "^1.27"
+        "laravel/pint": "^1.27",
+        "pestphp/pest": "^4.4"
     }
 }

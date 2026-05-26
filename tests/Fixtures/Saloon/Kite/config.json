@@ -1,0 +1,8 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "Content-Type": "application/json"
+    },
+    "data": "{\"config\":{\"monitored_packages\":[\"laravel/framework\",\"spatie/laravel-permission\"],\"is_sharing_all_packages\":false}}",
+    "context": {}
+}

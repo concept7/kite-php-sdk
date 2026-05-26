@@ -17,42 +17,73 @@ class NpmDependencies
         }
 
         $lockfile = static::readJsonFile($basePath.'/package-lock.json');
-        $dependencies = array_keys(array_merge(
+
+        if (blank($lockfile['packages'] ?? null)) {
+            return [];
+        }
+
+        $directNames = array_keys(array_merge(
             $packageJson['dependencies'] ?? [],
             $packageJson['devDependencies'] ?? [],
         ));
+
+        $requiredByMap = static::buildRequiredByMap($lockfile['packages']);
+
         $packages = [];
 
-        foreach ($dependencies as $name) {
-            $version = static::resolveVersion($name, $lockfile);
-
-            if (blank($version)) {
+        foreach ($lockfile['packages'] as $path => $info) {
+            if ($path === '') {
                 continue;
             }
 
-            $packages[] = [
+            $name = static::nameFromPath($path);
+            $version = $info['version'] ?? null;
+
+            if (blank($name) || blank($version)) {
+                continue;
+            }
+
+            $packages[$name.':'.$version] = [
                 'name' => $name,
                 'version' => $version,
                 'ecosystem' => Ecosystem::Npm,
+                'is_direct' => in_array($name, $directNames),
+                'required_by' => $requiredByMap[$name] ?? [],
             ];
         }
 
-        return $packages;
+        return array_values($packages);
     }
 
-    private static function resolveVersion(string $name, ?array $lockfile): ?string
+    private static function buildRequiredByMap(array $lockfilePackages): array
     {
-        if (blank($lockfile['packages'] ?? null)) {
-            return null;
-        }
+        $requiredBy = [];
 
-        foreach ($lockfile['packages'] as $path => $info) {
-            if (str_ends_with($path, "node_modules/{$name}")) {
-                return $info['version'] ?? null;
+        foreach ($lockfilePackages as $path => $info) {
+            if ($path === '') {
+                continue;
+            }
+
+            $name = static::nameFromPath($path);
+
+            if (blank($name)) {
+                continue;
+            }
+
+            foreach (array_keys($info['dependencies'] ?? []) as $dependency) {
+                $requiredBy[$dependency][] = $name;
             }
         }
 
-        return null;
+        return $requiredBy;
+    }
+
+    private static function nameFromPath(string $path): ?string
+    {
+        $parts = explode('node_modules/', $path);
+        $name = end($parts);
+
+        return filled($name) ? $name : null;
     }
 
     private static function readJsonFile(string $path): ?array
