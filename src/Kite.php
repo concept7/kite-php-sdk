@@ -100,18 +100,15 @@ class Kite
 
         if ($this->projectInfoCollector) {
             $projectInfo = $this->projectInfoCollector->collect();
-            $packages = data_get($projectInfo, 'packages', []);
-            $packages = $this->filterPackages($packages, $serverConfig);
+            $allPackages = data_get($projectInfo, 'packages', []);
+            $filteredPackages = $this->filterPackages($allPackages, $serverConfig);
 
-            $projectInfo['packages'] = $packages;
+            $projectInfo['packages'] = $filteredPackages;
             $payload['project_info'] = $projectInfo;
 
-            if (filled($packages)) {
+            if (filled($allPackages)) {
                 try {
-                    $payload['advisories'] = array_merge(
-                        ComposerAdvisories::scan($packages),
-                        NpmAdvisories::scan($packages),
-                    );
+                    $payload['advisories'] = $this->scanAdvisories($allPackages);
                 } catch (Throwable) {
                     // advisory scan failure must not block the report
                 }
@@ -141,16 +138,21 @@ class Kite
         }
 
         try {
-            $advisories = array_merge(
-                ComposerAdvisories::scan($packages),
-                NpmAdvisories::scan($packages),
-            );
+            $advisories = $this->scanAdvisories($packages);
         } catch (Throwable) {
             return;
         }
 
         $connector = new KiteConnector($this->config);
         $connector->send(new AdvisoriesRequest($advisories));
+    }
+
+    private function scanAdvisories(array $packages): array
+    {
+        return array_merge(
+            ComposerAdvisories::scan($packages),
+            NpmAdvisories::scan($packages),
+        );
     }
 
     private function fetchConfig(KiteConnector $connector): ConfigDto
