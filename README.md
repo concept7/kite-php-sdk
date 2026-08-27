@@ -1,6 +1,6 @@
 # Kite PHP SDK
 
-Framework-agnostic PHP client for [Kite](https://gitlab.concept7.nl/workflow/kite) monitoring. Collects project metadata (PHP version, database, frontend tooling, installed packages) and reports it to the Kite API.
+Framework-agnostic PHP client for [Kite](https://kite-monitor.com) monitoring. Collects project metadata (PHP version, database, frontend tooling, installed packages) and reports it to the Kite API.
 
 ## Requirements
 
@@ -15,7 +15,7 @@ composer require concept7/kite-php-sdk
 
 ## Configuration
 
-Set the `KITE_TOKEN` environment variable with the token generated from the [Kite Dashboard](https://kite-monitor.concept7.dev/).
+Set the `KITE_TOKEN` environment variable with the token generated from the [Kite Dashboard](https://kite-monitor.com/).
 
 ```php
 use Concept7\Kite\Kite;
@@ -26,7 +26,7 @@ $config = new KiteConfig(
 );
 ```
 
-The API base URL defaults to `https://kite-monitor.concept7.dev`. Override it for development:
+The API base URL defaults to `https://kite-monitor.com`. Override it for development:
 
 ```php
 $config = new KiteConfig(
