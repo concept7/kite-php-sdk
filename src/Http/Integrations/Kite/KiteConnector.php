@@ -19,7 +19,7 @@ class KiteConnector extends Connector
 
     protected function defaultSender(): Sender
     {
-        return new KiteGuzzleSender();
+        return new KiteGuzzleSender;
     }
 
     public function resolveBaseUrl(): string
