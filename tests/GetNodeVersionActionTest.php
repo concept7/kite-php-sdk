@@ -31,6 +31,27 @@ test('reads version from .nvmrc when node binary unavailable', function () {
     rmdir($dir);
 });
 
+test('reads version from .nvmrc when shell_exec is disabled', function () {
+    $dir = sys_get_temp_dir().'/kite-sdk-test-'.uniqid();
+    mkdir($dir);
+    file_put_contents($dir.'/.nvmrc', '20.11.0');
+
+    $action = new class($dir) extends GetNodeVersionAction
+    {
+        protected function canUseShellExec(): bool
+        {
+            return false;
+        }
+    };
+
+    $result = $action->handle(new Collection, fn ($data) => $data);
+
+    expect($result[0]['value'])->toBe('20.11.0');
+
+    unlink($dir.'/.nvmrc');
+    rmdir($dir);
+});
+
 test('strips leading v from .nvmrc version', function () {
     $dir = sys_get_temp_dir().'/kite-sdk-test-'.uniqid();
     mkdir($dir);
