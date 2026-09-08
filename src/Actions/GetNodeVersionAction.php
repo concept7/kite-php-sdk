@@ -49,6 +49,10 @@ class GetNodeVersionAction implements ActionInterface
 
     protected function resolveVersionFromBinary(): ?string
     {
+        if (! $this->canUseShellExec()) {
+            return null;
+        }
+
         $output = shell_exec('node --version 2>/dev/null');
 
         if (blank($output)) {
@@ -58,5 +62,10 @@ class GetNodeVersionAction implements ActionInterface
         $version = ltrim(trim($output), 'v');
 
         return preg_match('/^\d+\.\d+/', $version) ? $version : null;
+    }
+
+    protected function canUseShellExec(): bool
+    {
+        return function_exists('shell_exec');
     }
 }
