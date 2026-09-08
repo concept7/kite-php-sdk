@@ -1,5 +1,8 @@
 # Kite PHP SDK
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/concept7/kite-php-sdk.svg?style=flat-square)](https://packagist.org/packages/concept7/kite-php-sdk)
+[![Total Downloads](https://img.shields.io/packagist/dt/concept7/kite-php-sdk.svg?style=flat-square)](https://packagist.org/packages/concept7/kite-php-sdk)
+
 Framework-agnostic PHP client for [Kite](https://kite-monitor.com) monitoring. Collects project metadata (PHP, Node and database versions, installed packages), reports it to the Kite API, and scans those packages for known security advisories.
 
 This is the core SDK. For a framework integration, use [`concept7/laravel-kite`](https://github.com/concept7/laravel-kite) or [`concept7/wordpress-kite`](https://github.com/concept7/wordpress-kite) instead — both build on this package.
