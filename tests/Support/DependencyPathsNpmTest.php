@@ -82,3 +82,40 @@ test('malformed lockfile sections do not throw', function (): void {
         [['name' => 'b', 'version' => '1.0.0', 'constraint' => '^1.0.0']],
     ]);
 });
+
+test('scoped parent reaches its own nested copy, not the root copy', function () use ($fixtures): void {
+    expect(DependencyPaths::npm($fixtures.'/nested', 'x', '1.0.0'))->toBe([
+        [
+            ['name' => '@scope/a', 'version' => '1.0.0', 'constraint' => '^1.0.0'],
+            ['name' => 'x', 'version' => '1.0.0', 'constraint' => '^1.0.0'],
+        ],
+    ]);
+
+    expect(DependencyPaths::npm($fixtures.'/nested', 'x', '2.0.0'))->toBe([
+        [['name' => 'x', 'version' => '2.0.0', 'constraint' => '^2.0.0']],
+    ]);
+});
+
+test('dependencies win over other sections for the same name', function (): void {
+    $directory = sys_get_temp_dir().'/kite-npm-'.uniqid();
+    mkdir($directory);
+    file_put_contents($directory.'/package.json', json_encode([
+        'dependencies' => ['a' => '^1.0.0'],
+        'devDependencies' => ['a' => '^9.0.0'],
+    ]));
+    file_put_contents($directory.'/package-lock.json', json_encode(['packages' => [
+        'node_modules/a' => [
+            'version' => '1.0.0',
+            'dependencies' => ['x' => '^1.0.0'],
+            'peerDependencies' => ['x' => '^9.0.0'],
+        ],
+        'node_modules/x' => ['version' => '1.0.0'],
+    ]]));
+
+    expect(DependencyPaths::npm($directory, 'x', '1.0.0'))->toBe([
+        [
+            ['name' => 'a', 'version' => '1.0.0', 'constraint' => '^1.0.0'],
+            ['name' => 'x', 'version' => '1.0.0', 'constraint' => '^1.0.0'],
+        ],
+    ]);
+});

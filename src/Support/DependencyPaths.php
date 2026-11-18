@@ -51,6 +51,8 @@ class DependencyPaths
     }
 
     /**
+     * A lockfile entry's `name` is the real package name for aliased installs.
+     *
      * @return list<list<array{name: string, version: string, constraint: string}>>|null
      */
     public static function npm(string $basePath, string $package, string $version): ?array
@@ -81,11 +83,9 @@ class DependencyPaths
                 'version' => is_string($entryVersion) ? $entryVersion : '',
                 'dependencies' => static::resolveNpmSpecs(
                     $path,
-                    array_merge(
-                        static::arrayAt($entry, 'dependencies'),
-                        static::arrayAt($entry, 'optionalDependencies'),
-                        static::arrayAt($entry, 'peerDependencies'),
-                    ),
+                    static::arrayAt($entry, 'dependencies')
+                        + static::arrayAt($entry, 'optionalDependencies')
+                        + static::arrayAt($entry, 'peerDependencies'),
                     $lockfilePackages,
                 ),
             ];
@@ -93,12 +93,10 @@ class DependencyPaths
 
         $roots = static::resolveNpmSpecs(
             '',
-            array_merge(
-                static::arrayAt($packageJson, 'dependencies'),
-                static::arrayAt($packageJson, 'devDependencies'),
-                static::arrayAt($packageJson, 'optionalDependencies'),
-                static::arrayAt($packageJson, 'peerDependencies'),
-            ),
+            static::arrayAt($packageJson, 'dependencies')
+                + static::arrayAt($packageJson, 'devDependencies')
+                + static::arrayAt($packageJson, 'optionalDependencies')
+                + static::arrayAt($packageJson, 'peerDependencies'),
             $lockfilePackages,
         );
 

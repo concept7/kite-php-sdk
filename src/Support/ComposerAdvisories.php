@@ -7,14 +7,15 @@ use Concept7\Kite\Enums\Ecosystem;
 use Concept7\Kite\Enums\Severity;
 use Concept7\Kite\Http\Integrations\Packagist\PackagistConnector;
 use Concept7\Kite\Http\Integrations\Packagist\Requests\GetSecurityAdvisoriesRequest;
+use Throwable;
 
 class ComposerAdvisories
 {
     /**
      * @param  array<array{name: string, version: string, ecosystem: Ecosystem|string}>  $packages
-     * @return array<array{advisory_id: string, package: string, version: string, ecosystem: string, title: string, link: string|null, cve: string|null, severity: string|null, reported_at: string|null, fixed_version?: string|null}>
+     * @return array<array{advisory_id: string, package: string, version: string, ecosystem: string, title: string, link: string|null, cve: string|null, severity: string|null, reported_at: string|null, fixed_version?: string|null, dependency_paths?: list<list<array{name: string, version: string, constraint: string}>>}>
      */
-    public static function scan(array $packages): array
+    public static function scan(array $packages, ?string $basePath = null): array
     {
         $composerPackages = array_values(array_filter(
             $packages,
@@ -37,7 +38,11 @@ class ComposerAdvisories
         $advisoriesByPackage = $response->dto()->advisoriesByPackage;
         $advisories = [];
 
+        $basePath ??= DependencyPaths::basePath();
+
         foreach ($composerPackages as $package) {
+            $packageAdvisories = [];
+
             foreach (data_get($advisoriesByPackage, $package['name'], []) as $advisory) {
                 $affectedVersions = data_get($advisory, 'affectedVersions');
 
@@ -67,7 +72,25 @@ class ComposerAdvisories
                     );
                 }
 
-                $advisories[] = $advisoryPayload;
+                $packageAdvisories[] = $advisoryPayload;
+            }
+
+            if (blank($packageAdvisories)) {
+                continue;
+            }
+
+            try {
+                $dependencyPaths = DependencyPaths::composer($basePath, $package['name']);
+            } catch (Throwable) {
+                $dependencyPaths = null;
+            }
+
+            foreach ($packageAdvisories as $packageAdvisory) {
+                if (filled($dependencyPaths)) {
+                    $packageAdvisory['dependency_paths'] = $dependencyPaths;
+                }
+
+                $advisories[] = $packageAdvisory;
             }
         }
 

@@ -7,14 +7,15 @@ use Concept7\Kite\Enums\Severity;
 use Concept7\Kite\Http\Integrations\Osv\OsvConnector;
 use Concept7\Kite\Http\Integrations\Osv\Requests\GetVulnerabilityRequest;
 use Concept7\Kite\Http\Integrations\Osv\Requests\QueryBatchRequest;
+use Throwable;
 
 class NpmAdvisories
 {
     /**
      * @param  array<array{name: string, version: string, ecosystem: Ecosystem|string}>  $packages
-     * @return array<array{advisory_id: string, package: string, version: string, ecosystem: string, title: string, link: string|null, cve: string|null, severity: string|null, reported_at: string|null, fixed_version?: string|null}>
+     * @return array<array{advisory_id: string, package: string, version: string, ecosystem: string, title: string, link: string|null, cve: string|null, severity: string|null, reported_at: string|null, fixed_version?: string|null, dependency_paths?: list<list<array{name: string, version: string, constraint: string}>>}>
      */
-    public static function scan(array $packages): array
+    public static function scan(array $packages, ?string $basePath = null): array
     {
         $npmPackages = array_values(array_filter(
             $packages,
@@ -45,6 +46,8 @@ class NpmAdvisories
             return [];
         }
 
+        $basePath ??= DependencyPaths::basePath();
+        $dependencyPathsByPackage = [];
         $advisories = [];
 
         foreach ($vulnIdToIndexes as $vulnId => $packageIndexes) {
@@ -72,6 +75,20 @@ class NpmAdvisories
                         $vulnerability,
                         $package['name'],
                     );
+                }
+
+                $cacheKey = $package['name'].'@'.$package['version'];
+
+                if (! array_key_exists($cacheKey, $dependencyPathsByPackage)) {
+                    try {
+                        $dependencyPathsByPackage[$cacheKey] = DependencyPaths::npm($basePath, $package['name'], $package['version']);
+                    } catch (Throwable) {
+                        $dependencyPathsByPackage[$cacheKey] = null;
+                    }
+                }
+
+                if (filled($dependencyPathsByPackage[$cacheKey])) {
+                    $advisory['dependency_paths'] = $dependencyPathsByPackage[$cacheKey];
                 }
 
                 $advisories[] = $advisory;
