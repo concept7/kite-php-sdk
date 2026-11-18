@@ -78,7 +78,7 @@ class NpmDependencies
         return $requiredBy;
     }
 
-    private static function nameFromPath(string $path): ?string
+    public static function nameFromPath(string $path): ?string
     {
         $parts = explode('node_modules/', $path);
         $name = end($parts);

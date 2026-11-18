@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "vite": "^6.0.0",
+    "@acme/tool": "^1.0.0",
+    "alias": "npm:picomatch@^4"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  },
+  "peerDependencies": {
+    "peer-host": "^1.0.0"
+  }
+}
