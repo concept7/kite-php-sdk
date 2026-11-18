@@ -2,8 +2,6 @@
 
 namespace Concept7\Kite\Support;
 
-use Composer\InstalledVersions;
-
 class DependencyPaths
 {
     private const MAX_DIRECT_PACKAGES = 50;
@@ -142,10 +140,42 @@ class DependencyPaths
 
     public static function basePath(): string
     {
-        $installPath = data_get(InstalledVersions::getRootPackage(), 'install_path');
-        $realPath = filled($installPath) ? realpath($installPath) : false;
+        return static::projectRootFrom(__DIR__) ?? (getcwd() ?: '.');
+    }
 
-        return $realPath !== false ? $realPath : (getcwd() ?: '.');
+    public static function projectRootFrom(string $directory): ?string
+    {
+        $realDirectory = realpath($directory);
+
+        if ($realDirectory === false) {
+            return null;
+        }
+
+        $sdkMarker = '/vendor/concept7/kite-php-sdk/';
+        $markerPosition = strpos($realDirectory.'/', $sdkMarker);
+
+        if ($markerPosition !== false) {
+            return substr($realDirectory, 0, $markerPosition);
+        }
+
+        $candidate = dirname($realDirectory);
+
+        while ($candidate !== dirname($candidate)) {
+            $installedJson = static::readJsonFile($candidate.'/composer/installed.json');
+            $installedPackages = $installedJson === null ? [] : static::arrayAt($installedJson, 'packages');
+            $projectDirectory = dirname($candidate);
+
+            if (
+                in_array('concept7/kite-php-sdk', array_column($installedPackages, 'name'), true)
+                && is_file($projectDirectory.'/composer.json')
+            ) {
+                return $projectDirectory;
+            }
+
+            $candidate = $projectDirectory;
+        }
+
+        return null;
     }
 
     /**
