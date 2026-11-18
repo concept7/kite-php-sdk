@@ -8,7 +8,10 @@ use UnexpectedValueException;
 
 class FixedVersion
 {
-    public static function fromAffectedVersions(string $installedVersion, string $affectedVersions): ?string
+    /**
+     * @return array{known: bool, version: string|null}
+     */
+    public static function forPackagist(string $installedVersion, string $affectedVersions): array
     {
         foreach (explode('|', $affectedVersions) as $affectedRange) {
             try {
@@ -25,17 +28,23 @@ class FixedVersion
             }
 
             if (preg_match('/<(?!=)\s*([^,\s]+)/', $affectedRange, $matches) === 1) {
-                return $matches[1];
+                return ['known' => true, 'version' => $matches[1]];
             }
+
+            return [
+                'known' => ! str_contains($affectedRange, '<='),
+                'version' => null,
+            ];
         }
 
-        return null;
+        return ['known' => false, 'version' => null];
     }
 
     /**
      * @param  array{affected?: list<array{package?: array{name?: string, ecosystem?: string}, ranges?: list<array{type?: string, events?: list<array<string, string>>}>}>}  $vulnerability
+     * @return array{known: bool, version: string|null}
      */
-    public static function fromOsv(string $installedVersion, array $vulnerability, string $package): ?string
+    public static function forOsv(string $installedVersion, array $vulnerability, string $package): array
     {
         foreach (data_get($vulnerability, 'affected', []) as $affected) {
             if (data_get($affected, 'package.name') !== $package || data_get($affected, 'package.ecosystem') !== 'npm') {
@@ -48,49 +57,44 @@ class FixedVersion
                 }
 
                 $introduced = '0';
+                $isOpen = false;
 
                 foreach (data_get($range, 'events', []) as $event) {
-                    $introduced = data_get($event, 'introduced', $introduced);
                     $fixed = data_get($event, 'fixed');
+                    $lastAffected = data_get($event, 'last_affected');
 
-                    if (blank($fixed)) {
+                    if (filled(data_get($event, 'introduced'))) {
+                        $introduced = $event['introduced'];
+                        $isOpen = true;
+
                         continue;
                     }
 
+                    $isOpen = false;
+
                     try {
-                        $isAffectedByRange = Comparator::greaterThanOrEqualTo($installedVersion, $introduced)
-                            && Comparator::lessThan($installedVersion, $fixed);
+                        if (filled($fixed) && Comparator::greaterThanOrEqualTo($installedVersion, $introduced) && Comparator::lessThan($installedVersion, $fixed)) {
+                            return ['known' => true, 'version' => $fixed];
+                        }
+
+                        if (filled($lastAffected) && Comparator::greaterThanOrEqualTo($installedVersion, $introduced) && Comparator::lessThanOrEqualTo($installedVersion, $lastAffected)) {
+                            return ['known' => false, 'version' => null];
+                        }
                     } catch (UnexpectedValueException) {
                         continue;
                     }
+                }
 
-                    if ($isAffectedByRange) {
-                        return $fixed;
+                try {
+                    if ($isOpen && Comparator::greaterThanOrEqualTo($installedVersion, $introduced)) {
+                        return ['known' => true, 'version' => null];
                     }
+                } catch (UnexpectedValueException) {
+                    continue;
                 }
             }
         }
 
-        return null;
-    }
-
-    /**
-     * @param  array{affected?: list<array{package?: array{name?: string, ecosystem?: string}, ranges?: list<array{type?: string}>}>}  $vulnerability
-     */
-    public static function hasOsvRanges(array $vulnerability, string $package): bool
-    {
-        foreach (data_get($vulnerability, 'affected', []) as $affected) {
-            if (data_get($affected, 'package.name') !== $package || data_get($affected, 'package.ecosystem') !== 'npm') {
-                continue;
-            }
-
-            foreach (data_get($affected, 'ranges', []) as $range) {
-                if (in_array(data_get($range, 'type'), ['SEMVER', 'ECOSYSTEM'], true)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return ['known' => false, 'version' => null];
     }
 }

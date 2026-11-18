@@ -66,10 +66,11 @@ class ComposerAdvisories
                 ];
 
                 if (filled($affectedVersions)) {
-                    $advisoryPayload['fixed_version'] = FixedVersion::fromAffectedVersions(
-                        $package['version'],
-                        $affectedVersions,
-                    );
+                    $fixedVersion = FixedVersion::forPackagist($package['version'], $affectedVersions);
+
+                    if ($fixedVersion['known']) {
+                        $advisoryPayload['fixed_version'] = $fixedVersion['version'];
+                    }
                 }
 
                 $packageAdvisories[] = $advisoryPayload;

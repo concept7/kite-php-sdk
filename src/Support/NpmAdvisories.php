@@ -69,12 +69,14 @@ class NpmAdvisories
                     'ecosystem' => Ecosystem::Npm->value,
                 ]);
 
-                if (FixedVersion::hasOsvRanges($vulnerability, $package['name'])) {
-                    $advisory['fixed_version'] = FixedVersion::fromOsv(
-                        $package['version'],
-                        $vulnerability,
-                        $package['name'],
-                    );
+                $fixedVersion = FixedVersion::forOsv(
+                    $package['version'],
+                    $vulnerability,
+                    $package['name'],
+                );
+
+                if ($fixedVersion['known']) {
+                    $advisory['fixed_version'] = $fixedVersion['version'];
                 }
 
                 $cacheKey = $package['name'].'@'.$package['version'];

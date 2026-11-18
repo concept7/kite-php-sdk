@@ -45,6 +45,15 @@ test('composer advisory with an open range has a null fixed version', function (
         ->and($advisories[0]['fixed_version'])->toBeNull();
 });
 
+test('composer advisory with an inclusive upper bound has no fixed version key', function () use ($laravelPackage): void {
+    fakePackagistAdvisory(['affectedVersions' => '>=1.0,<=1.2.0']);
+
+    $advisories = ComposerAdvisories::scan($laravelPackage);
+
+    expect($advisories)->toHaveCount(1)
+        ->and(array_key_exists('fixed_version', $advisories[0]))->toBeFalse();
+});
+
 test('composer advisory without affected versions has no fixed version key', function () use ($laravelPackage): void {
     fakePackagistAdvisory([]);
 

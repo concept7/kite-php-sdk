@@ -34,10 +34,21 @@ test('npm advisory carries the fixed version', function () use ($leftPadPackage)
         ->and($advisories[0]['fixed_version'])->toBe('2.3.2');
 });
 
-test('npm advisory without a fixed event has a null fixed version', function () use ($leftPadPackage): void {
+test('npm advisory with only a last affected event has no fixed version key', function () use ($leftPadPackage): void {
     fakeOsvVulnerability([[
         'package' => ['name' => 'left-pad', 'ecosystem' => 'npm'],
         'ranges' => [['type' => 'SEMVER', 'events' => [['introduced' => '0'], ['last_affected' => '2.3.1']]]],
+    ]]);
+
+    $advisories = NpmAdvisories::scan($leftPadPackage);
+
+    expect(array_key_exists('fixed_version', $advisories[0]))->toBeFalse();
+});
+
+test('npm advisory with an open range has a null fixed version', function () use ($leftPadPackage): void {
+    fakeOsvVulnerability([[
+        'package' => ['name' => 'left-pad', 'ecosystem' => 'npm'],
+        'ranges' => [['type' => 'SEMVER', 'events' => [['introduced' => '0']]]],
     ]]);
 
     $advisories = NpmAdvisories::scan($leftPadPackage);
