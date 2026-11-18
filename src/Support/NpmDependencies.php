@@ -8,7 +8,7 @@ class NpmDependencies
 {
     public static function installed(?string $basePath = null): array
     {
-        $basePath ??= getcwd();
+        $basePath ??= DependencyPaths::basePath();
 
         $packageJson = static::readJsonFile($basePath.'/package.json');
 
