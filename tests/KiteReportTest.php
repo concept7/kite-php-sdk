@@ -31,9 +31,9 @@ function fakeProjectCollector(): ProjectInfoCollectorInterface
     };
 }
 
-function fakeKiteEndpoints(): MockClient
+function fakeKiteEndpoints(array $overrides = []): MockClient
 {
-    return MockClient::global([
+    return MockClient::global(array_merge([
         ConfigRequest::class => MockResponse::make(['config' => ['monitored_packages' => [], 'is_sharing_all_packages' => true]]),
         GetSecurityAdvisoriesRequest::class => MockResponse::make(['advisories' => [
             'acme/transitive' => [[
@@ -63,7 +63,7 @@ function fakeKiteEndpoints(): MockClient
         '*/vulns/GHSA-GHOST' => MockResponse::make(['id' => 'GHSA-GHOST', 'summary' => 'Ghost npm flaw']),
         ReportRequest::class => MockResponse::make(['message' => 'ok']),
         AdvisoriesRequest::class => MockResponse::make(['message' => 'ok']),
-    ]);
+    ], $overrides));
 }
 
 function advisoriesByPackage(array $advisories): array
@@ -125,4 +125,31 @@ test('checkAdvisories sends fixed versions and dependency paths', function (): v
     expect($request)->toBeInstanceOf(AdvisoriesRequest::class);
 
     expectFixtureAdvisories($request->body()->all()['advisories']);
+});
+
+test('report leaves advisories out of the payload when an advisory source fails', function (): void {
+    $mockClient = fakeKiteEndpoints([GetSecurityAdvisoriesRequest::class => MockResponse::make([], 503)]);
+
+    Kite::make(new KiteConfig(token: 'test-token'))
+        ->setActions([])
+        ->projectInfoCollector(fakeProjectCollector())
+        ->basePath(__DIR__.'/Fixtures/Project')
+        ->report();
+
+    $body = $mockClient->getLastRequest()->body()->all();
+
+    expect($mockClient->getLastRequest())->toBeInstanceOf(ReportRequest::class)
+        ->and($body)->toHaveKeys(['meta', 'project_info'])
+        ->and($body)->not->toHaveKey('advisories');
+});
+
+test('checkAdvisories sends nothing when an advisory source fails', function (): void {
+    $mockClient = fakeKiteEndpoints([GetSecurityAdvisoriesRequest::class => MockResponse::make([], 503)]);
+
+    Kite::make(new KiteConfig(token: 'test-token'))
+        ->projectInfoCollector(fakeProjectCollector())
+        ->basePath(__DIR__.'/Fixtures/Project')
+        ->checkAdvisories();
+
+    $mockClient->assertNotSent(AdvisoriesRequest::class);
 });

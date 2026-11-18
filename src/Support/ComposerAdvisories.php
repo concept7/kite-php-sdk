@@ -5,6 +5,7 @@ namespace Concept7\Kite\Support;
 use Composer\Semver\Semver;
 use Concept7\Kite\Enums\Ecosystem;
 use Concept7\Kite\Enums\Severity;
+use Concept7\Kite\Exceptions\AdvisorySourceUnavailable;
 use Concept7\Kite\Http\Integrations\Packagist\PackagistConnector;
 use Concept7\Kite\Http\Integrations\Packagist\Requests\GetSecurityAdvisoriesRequest;
 use Throwable;
@@ -32,7 +33,7 @@ class ComposerAdvisories
         $response = $connector->send(new GetSecurityAdvisoriesRequest($packageNames));
 
         if ($response->failed()) {
-            return [];
+            throw AdvisorySourceUnavailable::for('Packagist');
         }
 
         $advisoriesByPackage = $response->dto()->advisoriesByPackage;

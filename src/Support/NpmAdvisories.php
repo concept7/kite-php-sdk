@@ -4,6 +4,7 @@ namespace Concept7\Kite\Support;
 
 use Concept7\Kite\Enums\Ecosystem;
 use Concept7\Kite\Enums\Severity;
+use Concept7\Kite\Exceptions\AdvisorySourceUnavailable;
 use Concept7\Kite\Http\Integrations\Osv\OsvConnector;
 use Concept7\Kite\Http\Integrations\Osv\Requests\GetVulnerabilityRequest;
 use Concept7\Kite\Http\Integrations\Osv\Requests\QueryBatchRequest;
@@ -30,7 +31,7 @@ class NpmAdvisories
         $response = $connector->send(new QueryBatchRequest($npmPackages));
 
         if ($response->failed()) {
-            return [];
+            throw AdvisorySourceUnavailable::for('OSV');
         }
 
         $results = $response->dto()->results;
@@ -54,7 +55,7 @@ class NpmAdvisories
             $detailResponse = $connector->send(new GetVulnerabilityRequest($vulnId));
 
             if ($detailResponse->failed()) {
-                continue;
+                throw AdvisorySourceUnavailable::for('OSV');
             }
 
             $vulnerability = $detailResponse->dto()->data;

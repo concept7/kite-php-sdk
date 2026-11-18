@@ -1,5 +1,6 @@
 <?php
 
+use Concept7\Kite\Exceptions\AdvisorySourceUnavailable;
 use Concept7\Kite\Http\Integrations\Osv\Requests\GetVulnerabilityRequest;
 use Concept7\Kite\Http\Integrations\Osv\Requests\QueryBatchRequest;
 use Concept7\Kite\Support\NpmAdvisories;
@@ -137,3 +138,21 @@ test('a failure while building npm paths drops only the paths', function () use 
         ->and($advisories[0]['advisory_id'])->toBe('GHSA-1234-abcd-5678')
         ->and(array_key_exists('dependency_paths', $advisories[0]))->toBeFalse();
 })->skip(function_exists('posix_geteuid') && posix_geteuid() === 0, 'root can read unreadable files');
+
+test('npm scan throws when the osv batch query fails', function () use ($leftPadPackage): void {
+    MockClient::global([
+        QueryBatchRequest::class => MockResponse::make([], 500),
+    ]);
+
+    NpmAdvisories::scan($leftPadPackage);
+})->throws(AdvisorySourceUnavailable::class);
+
+test('npm scan throws when one vulnerability lookup fails', function () use ($leftPadPackage): void {
+    MockClient::global([
+        QueryBatchRequest::class => MockResponse::make(['results' => [['vulns' => [['id' => 'GHSA-1'], ['id' => 'GHSA-2']]]]]),
+        '*/vulns/GHSA-1' => MockResponse::make(['id' => 'GHSA-1', 'summary' => 'First']),
+        '*/vulns/GHSA-2' => MockResponse::make([], 500),
+    ]);
+
+    NpmAdvisories::scan($leftPadPackage);
+})->throws(AdvisorySourceUnavailable::class);

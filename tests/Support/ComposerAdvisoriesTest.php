@@ -1,5 +1,6 @@
 <?php
 
+use Concept7\Kite\Exceptions\AdvisorySourceUnavailable;
 use Concept7\Kite\Http\Integrations\Packagist\Requests\GetSecurityAdvisoriesRequest;
 use Concept7\Kite\Support\ComposerAdvisories;
 use Saloon\Http\Faking\MockClient;
@@ -116,3 +117,11 @@ test('a failure while building paths drops only the paths', function () use ($la
         ->and($advisories[0]['advisory_id'])->toBe('PKSA-2024-0001')
         ->and(array_key_exists('dependency_paths', $advisories[0]))->toBeFalse();
 })->skip(function_exists('posix_geteuid') && posix_geteuid() === 0, 'root can read unreadable files');
+
+test('composer scan throws when packagist is unavailable', function () use ($laravelPackage): void {
+    MockClient::global([
+        GetSecurityAdvisoriesRequest::class => MockResponse::make([], 500),
+    ]);
+
+    ComposerAdvisories::scan($laravelPackage);
+})->throws(AdvisorySourceUnavailable::class);
