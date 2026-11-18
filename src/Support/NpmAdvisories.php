@@ -12,7 +12,7 @@ class NpmAdvisories
 {
     /**
      * @param  array<array{name: string, version: string, ecosystem: Ecosystem|string}>  $packages
-     * @return array<array{advisory_id: string, package: string, version: string, ecosystem: string, title: string, link: string|null, cve: string|null, severity: string|null, reported_at: string|null}>
+     * @return array<array{advisory_id: string, package: string, version: string, ecosystem: string, title: string, link: string|null, cve: string|null, severity: string|null, reported_at: string|null, fixed_version?: string|null}>
      */
     public static function scan(array $packages): array
     {
@@ -54,16 +54,27 @@ class NpmAdvisories
                 continue;
             }
 
-            $normalized = static::normalizeVuln($detailResponse->dto()->data);
+            $vulnerability = $detailResponse->dto()->data;
+            $normalized = static::normalizeVuln($vulnerability);
 
             foreach (array_unique($packageIndexes) as $packageIndex) {
                 $package = $npmPackages[$packageIndex];
 
-                $advisories[] = array_merge($normalized, [
+                $advisory = array_merge($normalized, [
                     'package' => $package['name'],
                     'version' => $package['version'],
                     'ecosystem' => Ecosystem::Npm->value,
                 ]);
+
+                if (FixedVersion::hasOsvRanges($vulnerability, $package['name'])) {
+                    $advisory['fixed_version'] = FixedVersion::fromOsv(
+                        $package['version'],
+                        $vulnerability,
+                        $package['name'],
+                    );
+                }
+
+                $advisories[] = $advisory;
             }
         }
 

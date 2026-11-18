@@ -12,7 +12,7 @@ class ComposerAdvisories
 {
     /**
      * @param  array<array{name: string, version: string, ecosystem: Ecosystem|string}>  $packages
-     * @return array<array{advisory_id: string, package: string, version: string, ecosystem: string, title: string, link: string|null, cve: string|null, severity: string|null, reported_at: string|null}>
+     * @return array<array{advisory_id: string, package: string, version: string, ecosystem: string, title: string, link: string|null, cve: string|null, severity: string|null, reported_at: string|null, fixed_version?: string|null}>
      */
     public static function scan(array $packages): array
     {
@@ -45,7 +45,7 @@ class ComposerAdvisories
                     continue;
                 }
 
-                $advisories[] = [
+                $advisoryPayload = [
                     'advisory_id' => $advisory['advisoryId'],
                     'package' => $package['name'],
                     'version' => $package['version'],
@@ -59,6 +59,15 @@ class ComposerAdvisories
                         fn (string $reportedAt): string => date('Y-m-d', strtotime($reportedAt)),
                     ),
                 ];
+
+                if (filled($affectedVersions)) {
+                    $advisoryPayload['fixed_version'] = FixedVersion::fromAffectedVersions(
+                        $package['version'],
+                        $affectedVersions,
+                    );
+                }
+
+                $advisories[] = $advisoryPayload;
             }
         }
 
