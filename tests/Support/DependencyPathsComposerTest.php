@@ -104,3 +104,17 @@ test('paths with an empty hop are dropped', function (): void {
 test('base path is the project root', function (): void {
     expect(DependencyPaths::basePath())->toBe(realpath(__DIR__.'/../..'));
 });
+
+test('malformed lockfile content never throws', function (): void {
+    $directory = composerProjectWithDirectPackages(1);
+    file_put_contents($directory.'/composer.lock', json_encode([
+        'packages' => 'x',
+        'packages-dev' => [['name' => 'acme/direct-1', 'require' => ['a' => 1, 'acme/target' => ['^1.0']]], 'y'],
+    ]));
+
+    expect(DependencyPaths::composer($directory, 'acme/target'))->toBe([]);
+});
+
+test('package names are case-insensitive', function () use ($fixtures): void {
+    expect(DependencyPaths::composer($fixtures.'/basic', 'Acme/Other'))->toHaveCount(1);
+});

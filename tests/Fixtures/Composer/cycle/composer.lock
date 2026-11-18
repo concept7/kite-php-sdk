@@ -1,0 +1,24 @@
+{
+    "packages": [
+        {
+            "name": "acme/a",
+            "version": "1.0.0",
+            "require": {
+                "acme/b": "^1.1"
+            }
+        },
+        {
+            "name": "acme/b",
+            "version": "1.1.0",
+            "require": {
+                "acme/a": "^1.0",
+                "acme/target": "^3.0"
+            }
+        },
+        {
+            "name": "acme/target",
+            "version": "3.2.1"
+        }
+    ],
+    "packages-dev": []
+}

@@ -22,25 +22,32 @@ class DependencyPaths
 
         $graph = [];
 
-        foreach (array_merge(data_get($lockfile, 'packages', []), data_get($lockfile, 'packages-dev', [])) as $entry) {
-            $name = data_get($entry, 'name');
+        $entries = array_merge(
+            static::arrayAt($lockfile, 'packages'),
+            static::arrayAt($lockfile, 'packages-dev'),
+        );
 
-            if (blank($name)) {
+        foreach ($entries as $entry) {
+            $name = is_array($entry) ? data_get($entry, 'name') : null;
+
+            if (! is_string($name) || blank($name)) {
                 continue;
             }
 
-            $graph[$name] = [
-                'version' => (string) data_get($entry, 'version'),
-                'dependencies' => static::withoutPlatformPackages((array) data_get($entry, 'require', [])),
+            $version = data_get($entry, 'version');
+
+            $graph[strtolower($name)] = [
+                'version' => is_string($version) ? $version : '',
+                'dependencies' => static::cleanRequirements(static::arrayAt($entry, 'require')),
             ];
         }
 
-        $roots = static::withoutPlatformPackages(array_merge(
-            (array) data_get($composerJson, 'require', []),
-            (array) data_get($composerJson, 'require-dev', []),
+        $roots = static::cleanRequirements(array_merge(
+            static::arrayAt($composerJson, 'require'),
+            static::arrayAt($composerJson, 'require-dev'),
         ));
 
-        return static::shortestPaths($roots, $graph, $package);
+        return static::shortestPaths($roots, $graph, strtolower($package));
     }
 
     public static function basePath(): string
@@ -48,7 +55,7 @@ class DependencyPaths
         $installPath = data_get(InstalledVersions::getRootPackage(), 'install_path');
         $realPath = filled($installPath) ? realpath($installPath) : false;
 
-        return $realPath !== false ? $realPath : getcwd();
+        return $realPath !== false ? $realPath : (getcwd() ?: '.');
     }
 
     /**
@@ -116,18 +123,39 @@ class DependencyPaths
     }
 
     /**
-     * @param  array<string, string>  $requirements
+     * @param  array<mixed>  $requirements
      * @return array<string, string>
      */
-    protected static function withoutPlatformPackages(array $requirements): array
+    protected static function cleanRequirements(array $requirements): array
     {
-        return array_filter(
-            $requirements,
-            fn (string $name): bool => ! in_array($name, ['php', 'composer-plugin-api'], true)
-                && ! str_starts_with($name, 'ext-')
-                && ! str_starts_with($name, 'lib-'),
-            ARRAY_FILTER_USE_KEY,
-        );
+        $cleaned = [];
+
+        foreach ($requirements as $name => $constraint) {
+            if (! is_string($name) || ! is_string($constraint) || blank($name) || blank($constraint)) {
+                continue;
+            }
+
+            $name = strtolower($name);
+
+            if (in_array($name, ['php', 'composer-plugin-api'], true) || str_starts_with($name, 'ext-') || str_starts_with($name, 'lib-')) {
+                continue;
+            }
+
+            $cleaned[$name] = $constraint;
+        }
+
+        return $cleaned;
+    }
+
+    /**
+     * @param  array<mixed>  $data
+     * @return array<mixed>
+     */
+    protected static function arrayAt(array $data, string $key): array
+    {
+        $value = data_get($data, $key);
+
+        return is_array($value) ? $value : [];
     }
 
     /**
