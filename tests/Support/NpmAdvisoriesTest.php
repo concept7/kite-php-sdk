@@ -118,9 +118,11 @@ test('a failure while building npm paths drops only the paths', function () use 
     } finally {
         restore_error_handler();
         chmod($directory.'/package-lock.json', 0644);
+        array_map('unlink', glob($directory.'/*'));
+        rmdir($directory);
     }
 
     expect($advisories)->toHaveCount(1)
         ->and($advisories[0]['advisory_id'])->toBe('GHSA-1234-abcd-5678')
         ->and(array_key_exists('dependency_paths', $advisories[0]))->toBeFalse();
-});
+})->skip(function_exists('posix_geteuid') && posix_geteuid() === 0, 'root can read unreadable files');

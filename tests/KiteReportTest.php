@@ -90,8 +90,10 @@ function expectFixtureAdvisories(array $advisories): void
                 ['name' => 'left-pad', 'version' => '2.3.1', 'constraint' => '^2.0.0'],
             ],
         ])
-        ->and($byPackage['acme/ghost'])->not->toHaveKeys(['fixed_version', 'dependency_paths'])
-        ->and($byPackage['ghost-npm'])->not->toHaveKeys(['fixed_version', 'dependency_paths']);
+        ->and($byPackage['acme/ghost'])->not->toHaveKey('fixed_version')
+        ->and($byPackage['acme/ghost'])->not->toHaveKey('dependency_paths')
+        ->and($byPackage['ghost-npm'])->not->toHaveKey('fixed_version')
+        ->and($byPackage['ghost-npm'])->not->toHaveKey('dependency_paths');
 }
 
 test('report sends fixed versions and dependency paths', function (): void {
