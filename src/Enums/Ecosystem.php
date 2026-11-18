@@ -8,14 +8,14 @@ enum Ecosystem: string
     case Npm = 'npm';
     case Wordpress = 'wordpress';
 
-    public static function parse(null|string|self $value): ?static
+    public static function parse(null|int|string|self $value): ?static
     {
-        if ($value instanceof self) {
-            return $value;
+        if ($value === null) {
+            return null;
         }
 
-        if (blank($value)) {
-            return null;
+        if ($value instanceof self) {
+            return $value;
         }
 
         return self::tryFrom($value);
