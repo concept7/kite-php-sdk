@@ -9,7 +9,7 @@ class ComposerDependencies
 {
     public static function direct(?string $basePath = null): array
     {
-        $basePath ??= getcwd();
+        $basePath ??= DependencyPaths::basePath();
         $composerJsonPath = $basePath.'/composer.json';
 
         if (! file_exists($composerJsonPath)) {
@@ -23,6 +23,7 @@ class ComposerDependencies
         }
 
         $requires = array_keys($composerJson['require'] ?? []);
+        $lockedVersions = static::lockedVersions($basePath);
 
         $packages = [];
 
@@ -31,11 +32,20 @@ class ComposerDependencies
                 continue;
             }
 
-            if (! InstalledVersions::isInstalled($name)) {
+            if ($lockedVersions === null && ! InstalledVersions::isInstalled($name)) {
                 continue;
             }
 
-            $packages[] = static::parsePackageData($name, true, []);
+            if ($lockedVersions !== null && ! array_key_exists($name, $lockedVersions)) {
+                continue;
+            }
+
+            $packages[] = static::parsePackageData(
+                $name,
+                $lockedVersions[$name] ?? InstalledVersions::getPrettyVersion($name),
+                true,
+                [],
+            );
         }
 
         return $packages;
@@ -43,26 +53,63 @@ class ComposerDependencies
 
     public static function all(?string $basePath = null): array
     {
-        $basePath ??= getcwd();
+        $basePath ??= DependencyPaths::basePath();
         $directNames = static::directNames($basePath);
         $requiredByMap = static::buildRequiredByMap($basePath);
+        $versions = static::lockedVersions($basePath);
 
-        $versions = [];
-        foreach (InstalledVersions::getAllRawData() as $data) {
-            foreach ($data['versions'] ?? [] as $name => $properties) {
-                $versions[$name] ??= $properties;
+        if ($versions === null) {
+            $versions = [];
+
+            foreach (InstalledVersions::getAllRawData() as $data) {
+                foreach ($data['versions'] ?? [] as $name => $properties) {
+                    if (isset($properties['pretty_version'])) {
+                        $versions[$name] ??= $properties['pretty_version'];
+                    }
+                }
             }
         }
 
         return collect($versions)
-            ->filter(fn (array $properties): bool => isset($properties['pretty_version']))
-            ->map(fn (array $properties, string $name) => static::parsePackageData(
+            ->map(fn (string $version, string $name) => static::parsePackageData(
                 $name,
+                $version,
                 in_array($name, $directNames),
                 $requiredByMap[$name] ?? [],
             ))
             ->values()
             ->all();
+    }
+
+    /**
+     * @return array<string, string>|null
+     */
+    private static function lockedVersions(string $basePath): ?array
+    {
+        $lockfilePath = $basePath.'/composer.lock';
+
+        if (! is_file($lockfilePath)) {
+            return null;
+        }
+
+        $lockfile = json_decode((string) file_get_contents($lockfilePath), true);
+
+        if (! is_array($lockfile)) {
+            return null;
+        }
+
+        $versions = [];
+
+        foreach (array_merge($lockfile['packages'] ?? [], $lockfile['packages-dev'] ?? []) as $package) {
+            $name = data_get($package, 'name');
+            $version = data_get($package, 'version');
+
+            if (filled($name) && filled($version)) {
+                $versions[$name] = $version;
+            }
+        }
+
+        return $versions;
     }
 
     private static function buildRequiredByMap(string $basePath): array
@@ -119,11 +166,11 @@ class ComposerDependencies
         ));
     }
 
-    private static function parsePackageData(string $name, bool $isDirect = false, array $requiredBy = []): array
+    private static function parsePackageData(string $name, ?string $version, bool $isDirect = false, array $requiredBy = []): array
     {
         return [
             'name' => $name,
-            'version' => InstalledVersions::getPrettyVersion($name),
+            'version' => $version,
             'ecosystem' => Ecosystem::Composer,
             'is_direct' => $isDirect,
             'required_by' => $requiredBy,
