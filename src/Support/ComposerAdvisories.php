@@ -18,7 +18,7 @@ class ComposerAdvisories
     {
         $composerPackages = array_values(array_filter(
             $packages,
-            fn (array $package): bool => static::isComposer(data_get($package, 'ecosystem')),
+            fn (array $package): bool => Ecosystem::parse(data_get($package, 'ecosystem')) === Ecosystem::Composer,
         ));
 
         if (blank($composerPackages)) {
@@ -34,7 +34,7 @@ class ComposerAdvisories
             return [];
         }
 
-        $advisoriesByPackage = $response->json('advisories') ?? [];
+        $advisoriesByPackage = $response->dto()->advisoriesByPackage;
         $advisories = [];
 
         foreach ($composerPackages as $package) {
@@ -63,14 +63,5 @@ class ComposerAdvisories
         }
 
         return $advisories;
-    }
-
-    private static function isComposer(Ecosystem|string|null $ecosystem): bool
-    {
-        if ($ecosystem instanceof Ecosystem) {
-            return $ecosystem === Ecosystem::Composer;
-        }
-
-        return $ecosystem === Ecosystem::Composer->value;
     }
 }

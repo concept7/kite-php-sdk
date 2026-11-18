@@ -18,7 +18,7 @@ class NpmAdvisories
     {
         $npmPackages = array_values(array_filter(
             $packages,
-            fn (array $package): bool => static::isNpm(data_get($package, 'ecosystem')),
+            fn (array $package): bool => Ecosystem::parse(data_get($package, 'ecosystem')) === Ecosystem::Npm,
         ));
 
         if (blank($npmPackages)) {
@@ -32,7 +32,7 @@ class NpmAdvisories
             return [];
         }
 
-        $results = $response->json('results') ?? [];
+        $results = $response->dto()->results;
 
         $vulnIdToIndexes = [];
         foreach ($results as $index => $result) {
@@ -54,7 +54,7 @@ class NpmAdvisories
                 continue;
             }
 
-            $normalized = static::normalizeVuln($detailResponse->json());
+            $normalized = static::normalizeVuln($detailResponse->dto()->data);
 
             foreach (array_unique($packageIndexes) as $packageIndex) {
                 $package = $npmPackages[$packageIndex];
@@ -103,14 +103,5 @@ class NpmAdvisories
                 fn (string $published): string => date('Y-m-d', strtotime($published)),
             ),
         ];
-    }
-
-    private static function isNpm(Ecosystem|string|null $ecosystem): bool
-    {
-        if ($ecosystem instanceof Ecosystem) {
-            return $ecosystem === Ecosystem::Npm;
-        }
-
-        return $ecosystem === Ecosystem::Npm->value;
     }
 }
