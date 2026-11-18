@@ -1,5 +1,6 @@
 <?php
 
+use Concept7\Kite\Http\Integrations\Osv\Dtos\QueryBatchResultDto;
 use Concept7\Kite\Http\Integrations\Osv\OsvConnector;
 use Concept7\Kite\Http\Integrations\Osv\Requests\QueryBatchRequest;
 use Saloon\Http\Faking\Fixture;
@@ -28,4 +29,22 @@ test('QueryBatchRequest returns results from response', function (): void {
 
     expect($response->json('results'))->toHaveCount(2)
         ->and($response->json('results.0.vulns.0.id'))->toBe('GHSA-1234-abcd-5678');
+});
+
+test('QueryBatchRequest maps response to QueryBatchResultDto', function (): void {
+    $mockClient = new MockClient([
+        QueryBatchRequest::class => new Fixture('Osv/query-batch'),
+    ]);
+
+    $connector = new OsvConnector;
+    $connector->withMockClient($mockClient);
+
+    $dto = $connector->send(new QueryBatchRequest([
+        ['name' => 'lodash', 'version' => '4.17.15'],
+        ['name' => 'axios', 'version' => '0.21.1'],
+    ]))->dtoOrFail();
+
+    expect($dto)->toBeInstanceOf(QueryBatchResultDto::class)
+        ->and($dto->results)->toHaveCount(2)
+        ->and($dto->results[0]['vulns'][0]['id'])->toBe('GHSA-1234-abcd-5678');
 });
