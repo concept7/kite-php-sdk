@@ -26,6 +26,8 @@ class Kite
 
     private ?ProjectInfoCollectorInterface $projectInfoCollector = null;
 
+    private ?string $basePath = null;
+
     private function __construct(private KiteConfig $config)
     {
         $this->actions = $this->defaultActions();
@@ -39,6 +41,13 @@ class Kite
     public function projectInfoCollector(ProjectInfoCollectorInterface $collector): self
     {
         $this->projectInfoCollector = $collector;
+
+        return $this;
+    }
+
+    public function basePath(string $basePath): self
+    {
+        $this->basePath = $basePath;
 
         return $this;
     }
@@ -150,8 +159,8 @@ class Kite
     private function scanAdvisories(array $packages): array
     {
         return array_merge(
-            ComposerAdvisories::scan($packages),
-            NpmAdvisories::scan($packages),
+            ComposerAdvisories::scan($packages, $this->basePath),
+            NpmAdvisories::scan($packages, $this->basePath),
         );
     }
 

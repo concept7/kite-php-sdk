@@ -5,20 +5,22 @@ namespace Concept7\Kite\Support;
 use Composer\Semver\Semver;
 use Concept7\Kite\Enums\Ecosystem;
 use Concept7\Kite\Enums\Severity;
+use Concept7\Kite\Exceptions\AdvisorySourceUnavailable;
 use Concept7\Kite\Http\Integrations\Packagist\PackagistConnector;
 use Concept7\Kite\Http\Integrations\Packagist\Requests\GetSecurityAdvisoriesRequest;
+use Throwable;
 
 class ComposerAdvisories
 {
     /**
      * @param  array<array{name: string, version: string, ecosystem: Ecosystem|string}>  $packages
-     * @return array<array{advisory_id: string, package: string, version: string, ecosystem: string, title: string, link: string|null, cve: string|null, severity: string|null, reported_at: string|null}>
+     * @return array<array{advisory_id: string, package: string, version: string, ecosystem: string, title: string, link: string|null, cve: string|null, severity: string|null, reported_at: string|null, fixed_version?: string|null, dependency_paths?: list<list<array{name: string, version: string, constraint: string}>>}>
      */
-    public static function scan(array $packages): array
+    public static function scan(array $packages, ?string $basePath = null): array
     {
         $composerPackages = array_values(array_filter(
             $packages,
-            fn (array $package): bool => static::isComposer(data_get($package, 'ecosystem')),
+            fn (array $package): bool => data_get($package, 'ecosystem') === Ecosystem::Composer,
         ));
 
         if (blank($composerPackages)) {
@@ -31,13 +33,17 @@ class ComposerAdvisories
         $response = $connector->send(new GetSecurityAdvisoriesRequest($packageNames));
 
         if ($response->failed()) {
-            return [];
+            throw AdvisorySourceUnavailable::for('Packagist');
         }
 
-        $advisoriesByPackage = $response->json('advisories') ?? [];
+        $advisoriesByPackage = $response->dto()->advisoriesByPackage;
         $advisories = [];
 
+        $basePath ??= DependencyPaths::basePath();
+
         foreach ($composerPackages as $package) {
+            $packageAdvisories = [];
+
             foreach (data_get($advisoriesByPackage, $package['name'], []) as $advisory) {
                 $affectedVersions = data_get($advisory, 'affectedVersions');
 
@@ -45,7 +51,7 @@ class ComposerAdvisories
                     continue;
                 }
 
-                $advisories[] = [
+                $advisoryPayload = [
                     'advisory_id' => $advisory['advisoryId'],
                     'package' => $package['name'],
                     'version' => $package['version'],
@@ -59,18 +65,37 @@ class ComposerAdvisories
                         fn (string $reportedAt): string => date('Y-m-d', strtotime($reportedAt)),
                     ),
                 ];
+
+                if (filled($affectedVersions)) {
+                    $fixedVersion = FixedVersion::forPackagist($package['version'], $affectedVersions);
+
+                    if ($fixedVersion['known']) {
+                        $advisoryPayload['fixed_version'] = $fixedVersion['version'];
+                    }
+                }
+
+                $packageAdvisories[] = $advisoryPayload;
+            }
+
+            if (blank($packageAdvisories)) {
+                continue;
+            }
+
+            try {
+                $dependencyPaths = DependencyPaths::composer($basePath, $package['name']);
+            } catch (Throwable) {
+                $dependencyPaths = null;
+            }
+
+            foreach ($packageAdvisories as $packageAdvisory) {
+                if (filled($dependencyPaths)) {
+                    $packageAdvisory['dependency_paths'] = $dependencyPaths;
+                }
+
+                $advisories[] = $packageAdvisory;
             }
         }
 
         return $advisories;
-    }
-
-    private static function isComposer(Ecosystem|string|null $ecosystem): bool
-    {
-        if ($ecosystem instanceof Ecosystem) {
-            return $ecosystem === Ecosystem::Composer;
-        }
-
-        return $ecosystem === Ecosystem::Composer->value;
     }
 }

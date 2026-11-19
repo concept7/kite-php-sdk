@@ -9,33 +9,37 @@ class ComposerDependencies
 {
     public static function direct(?string $basePath = null): array
     {
-        $basePath ??= getcwd();
-        $composerJsonPath = $basePath.'/composer.json';
-
-        if (! file_exists($composerJsonPath)) {
-            return [];
-        }
-
-        $composerJson = json_decode(file_get_contents($composerJsonPath), true);
+        $basePath ??= DependencyPaths::basePath();
+        $composerJson = static::readJsonFile($basePath.'/composer.json');
 
         if (blank($composerJson)) {
             return [];
         }
 
-        $requires = array_keys($composerJson['require'] ?? []);
+        $lockEntries = static::lockEntries($basePath);
+        $lockedVersions = $lockEntries === null ? null : array_column($lockEntries, 'version', 'name');
 
         $packages = [];
 
-        foreach ($requires as $name) {
-            if ($name === 'php' || str_starts_with($name, 'ext-') || str_starts_with($name, 'lib-')) {
+        foreach (array_keys(data_get($composerJson, 'require', [])) as $name) {
+            if (static::isPlatformRequirement($name)) {
                 continue;
             }
 
-            if (! InstalledVersions::isInstalled($name)) {
+            if ($lockedVersions === null && ! InstalledVersions::isInstalled($name)) {
                 continue;
             }
 
-            $packages[] = static::parsePackageData($name, true, []);
+            if ($lockedVersions !== null && ! array_key_exists($name, $lockedVersions)) {
+                continue;
+            }
+
+            $packages[] = static::parsePackageData(
+                $name,
+                $lockedVersions[$name] ?? InstalledVersions::getPrettyVersion($name),
+                true,
+                [],
+            );
         }
 
         return $packages;
@@ -43,87 +47,111 @@ class ComposerDependencies
 
     public static function all(?string $basePath = null): array
     {
-        $basePath ??= getcwd();
-        $directNames = static::directNames($basePath);
-        $requiredByMap = static::buildRequiredByMap($basePath);
+        $basePath ??= DependencyPaths::basePath();
+        $composerJson = static::readJsonFile($basePath.'/composer.json');
+        $directNames = array_keys(array_merge(
+            data_get($composerJson, 'require', []),
+            data_get($composerJson, 'require-dev', []),
+        ));
+        $lockEntries = static::lockEntries($basePath);
 
+        if ($lockEntries === null) {
+            return static::installedPackages($directNames);
+        }
+
+        $requiredByMap = [];
+
+        foreach ($lockEntries as $entry) {
+            foreach (array_keys(data_get($entry, 'require', [])) as $dependency) {
+                if (! static::isPlatformRequirement($dependency)) {
+                    $requiredByMap[$dependency][] = $entry['name'];
+                }
+            }
+        }
+
+        return array_map(
+            fn (array $entry): array => static::parsePackageData(
+                $entry['name'],
+                $entry['version'],
+                in_array($entry['name'], $directNames),
+                $requiredByMap[$entry['name']] ?? [],
+            ),
+            $lockEntries,
+        );
+    }
+
+    /**
+     * @param  list<string>  $directNames
+     */
+    private static function installedPackages(array $directNames): array
+    {
         $versions = [];
+
         foreach (InstalledVersions::getAllRawData() as $data) {
             foreach ($data['versions'] ?? [] as $name => $properties) {
-                $versions[$name] ??= $properties;
+                if (isset($properties['pretty_version'])) {
+                    $versions[$name] ??= $properties['pretty_version'];
+                }
             }
         }
 
         return collect($versions)
-            ->filter(fn (array $properties): bool => isset($properties['pretty_version']))
-            ->map(fn (array $properties, string $name) => static::parsePackageData(
+            ->map(fn (string $version, string $name): array => static::parsePackageData(
                 $name,
+                $version,
                 in_array($name, $directNames),
-                $requiredByMap[$name] ?? [],
+                [],
             ))
             ->values()
             ->all();
     }
 
-    private static function buildRequiredByMap(string $basePath): array
+    /**
+     * @return list<array{name: string, version: string, require?: array<string, string>}>|null
+     */
+    private static function lockEntries(string $basePath): ?array
     {
-        $lockfilePath = $basePath.'/composer.lock';
+        $lockfile = static::readJsonFile($basePath.'/composer.lock');
 
-        if (! file_exists($lockfilePath)) {
-            return [];
+        if ($lockfile === null) {
+            return null;
         }
 
-        $lockfile = json_decode(file_get_contents($lockfilePath), true);
+        $installedJson = static::readJsonFile($basePath.'/vendor/composer/installed.json');
+        $installedNames = array_column(data_get($installedJson, 'packages', $installedJson ?? []), 'name');
 
-        if (blank($lockfile)) {
-            return [];
-        }
-
-        $requiredBy = [];
-
-        $allPackages = array_merge(
-            $lockfile['packages'] ?? [],
-            $lockfile['packages-dev'] ?? [],
+        $devEntries = array_filter(
+            data_get($lockfile, 'packages-dev', []),
+            fn (array $entry): bool => in_array(data_get($entry, 'name'), $installedNames, true),
         );
 
-        foreach ($allPackages as $package) {
-            foreach (array_keys($package['require'] ?? []) as $dependency) {
-                if ($dependency === 'php' || str_starts_with($dependency, 'ext-') || str_starts_with($dependency, 'lib-')) {
-                    continue;
-                }
-
-                $requiredBy[$dependency][] = $package['name'];
-            }
-        }
-
-        return $requiredBy;
-    }
-
-    private static function directNames(string $basePath): array
-    {
-        $composerJsonPath = $basePath.'/composer.json';
-
-        if (! file_exists($composerJsonPath)) {
-            return [];
-        }
-
-        $composerJson = json_decode(file_get_contents($composerJsonPath), true);
-
-        if (blank($composerJson)) {
-            return [];
-        }
-
-        return array_keys(array_merge(
-            $composerJson['require'] ?? [],
-            $composerJson['require-dev'] ?? [],
+        return array_values(array_filter(
+            array_merge(data_get($lockfile, 'packages', []), $devEntries),
+            fn (array $entry): bool => filled(data_get($entry, 'name')) && filled(data_get($entry, 'version')),
         ));
     }
 
-    private static function parsePackageData(string $name, bool $isDirect = false, array $requiredBy = []): array
+    private static function isPlatformRequirement(string $name): bool
+    {
+        return $name === 'php' || str_starts_with($name, 'ext-') || str_starts_with($name, 'lib-');
+    }
+
+    /**
+     * @return array<mixed>|null
+     */
+    private static function readJsonFile(string $path): ?array
+    {
+        $contents = is_file($path) ? file_get_contents($path) : false;
+        $data = $contents === false ? null : json_decode($contents, true);
+
+        return is_array($data) ? $data : null;
+    }
+
+    private static function parsePackageData(string $name, ?string $version, bool $isDirect = false, array $requiredBy = []): array
     {
         return [
             'name' => $name,
-            'version' => InstalledVersions::getPrettyVersion($name),
+            'version' => $version,
             'ecosystem' => Ecosystem::Composer,
             'is_direct' => $isDirect,
             'required_by' => $requiredBy,

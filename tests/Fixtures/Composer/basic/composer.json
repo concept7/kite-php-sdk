@@ -1,0 +1,11 @@
+{
+    "require": {
+        "php": "^8.2",
+        "ext-json": "*",
+        "laravel/framework": "^11.0",
+        "acme/other": "^1.0"
+    },
+    "require-dev": {
+        "acme/dev-tool": "^2.0"
+    }
+}

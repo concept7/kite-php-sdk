@@ -1,0 +1,6 @@
+{
+    "require": {
+        "php": "^8.2",
+        "acme/direct": "^1.0"
+    }
+}

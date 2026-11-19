@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "chokidar": "^3.0.0",
+    "picomatch": "^4.0.0",
+    "@scope/a": "^1.0.0",
+    "x": "^2.0.0"
+  }
+}
