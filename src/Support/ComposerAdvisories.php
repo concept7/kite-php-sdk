@@ -20,7 +20,7 @@ class ComposerAdvisories
     {
         $composerPackages = array_values(array_filter(
             $packages,
-            fn (array $package): bool => Ecosystem::parse(data_get($package, 'ecosystem')) === Ecosystem::Composer,
+            fn (array $package): bool => data_get($package, 'ecosystem') === Ecosystem::Composer,
         ));
 
         if (blank($composerPackages)) {

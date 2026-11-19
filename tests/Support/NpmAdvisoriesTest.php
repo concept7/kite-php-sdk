@@ -1,5 +1,6 @@
 <?php
 
+use Concept7\Kite\Enums\Ecosystem;
 use Concept7\Kite\Exceptions\AdvisorySourceUnavailable;
 use Concept7\Kite\Http\Integrations\Osv\Requests\GetVulnerabilityRequest;
 use Concept7\Kite\Http\Integrations\Osv\Requests\QueryBatchRequest;
@@ -21,7 +22,7 @@ function fakeOsvVulnerability(array $affected): void
     ]);
 }
 
-$leftPadPackage = [['name' => 'left-pad', 'version' => '2.3.1', 'ecosystem' => 'npm']];
+$leftPadPackage = [['name' => 'left-pad', 'version' => '2.3.1', 'ecosystem' => Ecosystem::Npm]];
 
 test('npm advisory carries the fixed version', function () use ($leftPadPackage): void {
     fakeOsvVulnerability([[
@@ -104,7 +105,7 @@ test('npm paths are computed once per package and version', function () use ($le
     ]);
 
     $advisories = NpmAdvisories::scan(
-        [['name' => 'left-pad', 'version' => '2.3.1', 'ecosystem' => 'npm']],
+        [['name' => 'left-pad', 'version' => '2.3.1', 'ecosystem' => Ecosystem::Npm]],
         __DIR__.'/../Fixtures/Project',
     );
 

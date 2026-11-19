@@ -1,5 +1,6 @@
 <?php
 
+use Concept7\Kite\Enums\Ecosystem;
 use Concept7\Kite\Exceptions\AdvisorySourceUnavailable;
 use Concept7\Kite\Http\Integrations\Osv\OsvConnector;
 use Concept7\Kite\Http\Integrations\Packagist\PackagistConnector;
@@ -10,8 +11,8 @@ use Saloon\Http\Faking\MockResponse;
 
 afterEach(fn () => MockClient::destroyGlobal());
 
-$composerPackage = [['name' => 'laravel/framework', 'version' => '1.2.0', 'ecosystem' => 'composer']];
-$npmPackage = [['name' => 'left-pad', 'version' => '2.3.1', 'ecosystem' => 'npm']];
+$composerPackage = [['name' => 'laravel/framework', 'version' => '1.2.0', 'ecosystem' => Ecosystem::Composer]];
+$npmPackage = [['name' => 'left-pad', 'version' => '2.3.1', 'ecosystem' => Ecosystem::Npm]];
 
 $packagistSuccess = fn (): MockResponse => MockResponse::make(['advisories' => [
     'laravel/framework' => [['advisoryId' => 'PKSA-1', 'title' => 'Flaw', 'affectedVersions' => '>=1.0,<1.2.3']],

@@ -20,7 +20,7 @@ class NpmAdvisories
     {
         $npmPackages = array_values(array_filter(
             $packages,
-            fn (array $package): bool => Ecosystem::parse(data_get($package, 'ecosystem')) === Ecosystem::Npm,
+            fn (array $package): bool => data_get($package, 'ecosystem') === Ecosystem::Npm,
         ));
 
         if (blank($npmPackages)) {

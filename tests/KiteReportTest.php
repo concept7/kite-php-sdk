@@ -1,6 +1,7 @@
 <?php
 
 use Concept7\Kite\Contracts\ProjectInfoCollectorInterface;
+use Concept7\Kite\Enums\Ecosystem;
 use Concept7\Kite\Http\Integrations\Kite\Requests\AdvisoriesRequest;
 use Concept7\Kite\Http\Integrations\Kite\Requests\ConfigRequest;
 use Concept7\Kite\Http\Integrations\Kite\Requests\ReportRequest;
@@ -21,10 +22,10 @@ function fakeProjectCollector(): ProjectInfoCollectorInterface
         {
             return [
                 'packages' => [
-                    ['name' => 'acme/transitive', 'version' => '1.2.0', 'ecosystem' => 'composer'],
-                    ['name' => 'acme/ghost', 'version' => '1.0.0', 'ecosystem' => 'composer'],
-                    ['name' => 'left-pad', 'version' => '2.3.1', 'ecosystem' => 'npm'],
-                    ['name' => 'ghost-npm', 'version' => '1.0.0', 'ecosystem' => 'npm'],
+                    ['name' => 'acme/transitive', 'version' => '1.2.0', 'ecosystem' => Ecosystem::Composer],
+                    ['name' => 'acme/ghost', 'version' => '1.0.0', 'ecosystem' => Ecosystem::Composer],
+                    ['name' => 'left-pad', 'version' => '2.3.1', 'ecosystem' => Ecosystem::Npm],
+                    ['name' => 'ghost-npm', 'version' => '1.0.0', 'ecosystem' => Ecosystem::Npm],
                 ],
             ];
         }

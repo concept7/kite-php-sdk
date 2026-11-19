@@ -1,5 +1,6 @@
 <?php
 
+use Concept7\Kite\Enums\Ecosystem;
 use Concept7\Kite\Exceptions\AdvisorySourceUnavailable;
 use Concept7\Kite\Http\Integrations\Packagist\Requests\GetSecurityAdvisoriesRequest;
 use Concept7\Kite\Support\ComposerAdvisories;
@@ -26,7 +27,7 @@ function fakePackagistAdvisory(array $advisory): void
     ]);
 }
 
-$laravelPackage = [['name' => 'laravel/framework', 'version' => '1.2.0', 'ecosystem' => 'composer']];
+$laravelPackage = [['name' => 'laravel/framework', 'version' => '1.2.0', 'ecosystem' => Ecosystem::Composer]];
 
 test('composer advisory carries the fixed version', function () use ($laravelPackage): void {
     fakePackagistAdvisory(['affectedVersions' => '>=1.0,<1.2.3']);
@@ -68,7 +69,7 @@ test('composer advisory carries dependency paths', function (): void {
     fakePackagistAdvisory(['affectedVersions' => '>=1.0,<1.2.3']);
 
     $advisories = ComposerAdvisories::scan(
-        [['name' => 'laravel/framework', 'version' => '1.2.0', 'ecosystem' => 'composer']],
+        [['name' => 'laravel/framework', 'version' => '1.2.0', 'ecosystem' => Ecosystem::Composer]],
         __DIR__.'/../Fixtures/Composer/basic',
     );
 
