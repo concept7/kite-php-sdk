@@ -1,0 +1,43 @@
+{
+    "packages": [
+        {
+            "name": "laravel/framework",
+            "version": "v11.0.0",
+            "require": {
+                "php": "^8.2",
+                "ext-json": "*",
+                "symfony/http-foundation": "^7.0.0"
+            }
+        },
+        {
+            "name": "acme/other",
+            "version": "1.0.0",
+            "require": {
+                "symfony/http-foundation": "~7.1"
+            }
+        },
+        {
+            "name": "symfony/http-foundation",
+            "version": "v7.1.0",
+            "require": {
+                "php": ">=8.2"
+            }
+        }
+    ],
+    "packages-dev": [
+        {
+            "name": "acme/dev-tool",
+            "version": "2.0.0",
+            "require": {
+                "symfony/console": "^7.0"
+            }
+        },
+        {
+            "name": "symfony/console",
+            "version": "v7.0.0",
+            "require": {
+                "php": ">=8.2"
+            }
+        }
+    ]
+}

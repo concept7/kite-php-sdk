@@ -4,21 +4,23 @@ namespace Concept7\Kite\Support;
 
 use Concept7\Kite\Enums\Ecosystem;
 use Concept7\Kite\Enums\Severity;
+use Concept7\Kite\Exceptions\AdvisorySourceUnavailable;
 use Concept7\Kite\Http\Integrations\Osv\OsvConnector;
 use Concept7\Kite\Http\Integrations\Osv\Requests\GetVulnerabilityRequest;
 use Concept7\Kite\Http\Integrations\Osv\Requests\QueryBatchRequest;
+use Throwable;
 
 class NpmAdvisories
 {
     /**
      * @param  array<array{name: string, version: string, ecosystem: Ecosystem|string}>  $packages
-     * @return array<array{advisory_id: string, package: string, version: string, ecosystem: string, title: string, link: string|null, cve: string|null, severity: string|null, reported_at: string|null}>
+     * @return array<array{advisory_id: string, package: string, version: string, ecosystem: string, title: string, link: string|null, cve: string|null, severity: string|null, reported_at: string|null, fixed_version?: string|null, dependency_paths?: list<list<array{name: string, version: string, constraint: string}>>}>
      */
-    public static function scan(array $packages): array
+    public static function scan(array $packages, ?string $basePath = null): array
     {
         $npmPackages = array_values(array_filter(
             $packages,
-            fn (array $package): bool => static::isNpm(data_get($package, 'ecosystem')),
+            fn (array $package): bool => data_get($package, 'ecosystem') === Ecosystem::Npm,
         ));
 
         if (blank($npmPackages)) {
@@ -29,10 +31,10 @@ class NpmAdvisories
         $response = $connector->send(new QueryBatchRequest($npmPackages));
 
         if ($response->failed()) {
-            return [];
+            throw AdvisorySourceUnavailable::for('OSV');
         }
 
-        $results = $response->json('results') ?? [];
+        $results = $response->dto()->results;
 
         $vulnIdToIndexes = [];
         foreach ($results as $index => $result) {
@@ -45,25 +47,54 @@ class NpmAdvisories
             return [];
         }
 
+        $basePath ??= DependencyPaths::basePath();
+        $dependencyPathsByPackage = [];
         $advisories = [];
 
         foreach ($vulnIdToIndexes as $vulnId => $packageIndexes) {
             $detailResponse = $connector->send(new GetVulnerabilityRequest($vulnId));
 
             if ($detailResponse->failed()) {
-                continue;
+                throw AdvisorySourceUnavailable::for('OSV');
             }
 
-            $normalized = static::normalizeVuln($detailResponse->json());
+            $vulnerability = $detailResponse->dto()->data;
+            $normalized = static::normalizeVuln($vulnerability);
 
             foreach (array_unique($packageIndexes) as $packageIndex) {
                 $package = $npmPackages[$packageIndex];
 
-                $advisories[] = array_merge($normalized, [
+                $advisory = array_merge($normalized, [
                     'package' => $package['name'],
                     'version' => $package['version'],
                     'ecosystem' => Ecosystem::Npm->value,
                 ]);
+
+                $fixedVersion = FixedVersion::forOsv(
+                    $package['version'],
+                    $vulnerability,
+                    $package['name'],
+                );
+
+                if ($fixedVersion['known']) {
+                    $advisory['fixed_version'] = $fixedVersion['version'];
+                }
+
+                $cacheKey = $package['name'].'@'.$package['version'];
+
+                if (! array_key_exists($cacheKey, $dependencyPathsByPackage)) {
+                    try {
+                        $dependencyPathsByPackage[$cacheKey] = DependencyPaths::npm($basePath, $package['name'], $package['version']);
+                    } catch (Throwable) {
+                        $dependencyPathsByPackage[$cacheKey] = null;
+                    }
+                }
+
+                if (filled($dependencyPathsByPackage[$cacheKey])) {
+                    $advisory['dependency_paths'] = $dependencyPathsByPackage[$cacheKey];
+                }
+
+                $advisories[] = $advisory;
             }
         }
 
@@ -103,14 +134,5 @@ class NpmAdvisories
                 fn (string $published): string => date('Y-m-d', strtotime($published)),
             ),
         ];
-    }
-
-    private static function isNpm(Ecosystem|string|null $ecosystem): bool
-    {
-        if ($ecosystem instanceof Ecosystem) {
-            return $ecosystem === Ecosystem::Npm;
-        }
-
-        return $ecosystem === Ecosystem::Npm->value;
     }
 }
